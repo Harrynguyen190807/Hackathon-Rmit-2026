@@ -1,0 +1,12 @@
+# Binaries and object files
+bin/
+*.o
+*.out
+*.exe
+
+# System & Editor files
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.log
