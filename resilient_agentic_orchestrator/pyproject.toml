@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "resilient-agentic-orchestrator"
+version = "1.0.0"
+description = "Deterministic, graph-based multi-agent orchestrator with security guardrails and Vietnamese logistics NLP"
+authors = [{ name = "Team Co Ro Chuong Bich - RMIT Hackathon 2026" }]
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.7.0,<3.0.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
