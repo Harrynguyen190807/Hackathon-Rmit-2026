@@ -94,7 +94,7 @@ class PlannerAgent:
                     arguments={"sku": target_sku},
                     provenance={"sku": "user"},
                     depends_on=[],
-                    rationale=f"Kiểm tra tồn kho hiện tại cho mã hàng {target_sku} theo yêu cầu người dùng.",
+                    rationale=f"Check current inventory level for SKU {target_sku} as requested by user.",
                 )
             )
 
@@ -125,8 +125,8 @@ class PlannerAgent:
                         depends_on=["s1"],
                         condition=StepCondition(from_step="s1", path="needs_reorder", equals=True),
                         rationale=(
-                            f"Nếu mã {target_sku} dưới mức an toàn (needs_reorder=True), "
-                            "tự động tạo Đơn mua hàng (PO) với số lượng và nhà cung cấp đề xuất."
+                            f"If SKU {target_sku} is below reorder threshold (needs_reorder=True), "
+                            "automatically create Purchase Order (PO) with suggested quantity and preferred vendor."
                         ),
                     )
                 )
@@ -154,13 +154,13 @@ class PlannerAgent:
                     provenance={"channel": "user" if channels else "policy", "message": "policy", "severity": "policy"},
                     depends_on=["s1", "s2"],
                     condition=StepCondition(from_step="s1", path="needs_reorder", equals=True),
-                    rationale=f"Gửi cảnh báo lên kênh {target_channel} khi phát hiện thiếu hàng.",
+                    rationale=f"Send alert to channel {target_channel} when inventory shortage is detected.",
                 )
             )
 
             directives.append(
-                "Thông báo kết quả kiểm tra tồn kho, chi tiết đơn đặt hàng (nếu thiếu hàng) "
-                "và xác nhận đã phát cảnh báo Slack nội bộ."
+                "Report inventory status, purchase order confirmation (if reorder triggered), "
+                "and internal Slack dispatch confirmation."
             )
 
         # =================================================================== #
@@ -176,7 +176,7 @@ class PlannerAgent:
                 added_mins = durations[0]
             else:
                 added_mins = 60  # Default 1 hour fallback
-                clarifications.append("Không phát hiện số phút trễ cụ thể; sử dụng mặc định 60 phút.")
+                clarifications.append("No specific delay duration detected; defaulting to 60 minutes.")
 
             # Resolve standardized reason
             if reasons:
@@ -205,15 +205,14 @@ class PlannerAgent:
                     },
                     depends_on=[],
                     rationale=(
-                        f"Cập nhật thời gian dự kiến giao hàng (ETA) cho vận đơn {target_tracking} "
-                        f"lùi thêm {added_mins} phút với lý do '{clean_reason}'."
+                        f"Update estimated delivery time (ETA) for tracking ID {target_tracking} "
+                        f"by {added_mins} minutes due to '{clean_reason}'."
                     ),
                 )
             )
 
             directives.append(
-                "Soạn phản hồi gửi khách hàng bằng tiếng Việt chuẩn mực, lịch sự, "
-                "nêu rõ lý do khách quan (ngập nước/kẹt xe), thời gian cập nhật mới và lời xin lỗi chân thành."
+                "Draft polite customer notification with objective delay reason, updated ETA, and sincere apologies."
             )
 
         # =================================================================== #
@@ -221,7 +220,7 @@ class PlannerAgent:
         # =================================================================== #
         else:
             intents.append("GENERAL_INQUIRY")
-            directives.append("Yêu cầu người dùng cung cấp mã hàng (SKU) hoặc mã vận đơn hợp lệ để xử lý.")
+            directives.append("Prompt user for valid SKU or tracking ID to proceed.")
 
         return ExecutionPlan(
             intents=intents,

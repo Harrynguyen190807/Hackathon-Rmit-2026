@@ -38,7 +38,7 @@ def dump_state_report(name: str, state: AgentState) -> None:
     print(f"• Risk Score:      {state.risk_score:.2f} (Human Review: {state.requires_human_review})")
 
     # Security Flags
-    print("\n[1] BẢO MẬT & GUARDRAILS (SECURITY TRACE):")
+    print("\n[1] SECURITY TRACE & GUARDRAIL FLAGS:")
     for flag in state.security_flags:
         v_icon = "🔴 BLOCKED" if flag.verdict.value == "BLOCKED" else "🟢 SAFE"
         print(f"  [{flag.stage.upper()} / {flag.source}] -> {v_icon} (Conf: {flag.confidence:.2f})")
@@ -46,29 +46,29 @@ def dump_state_report(name: str, state: AgentState) -> None:
             print(f"     - {r}")
 
     # Entities
-    print("\n[2] THỰC THỂ TIẾNG VIỆT ĐÃ TRÍCH XUẤT (EXTRACTED ENTITIES):")
+    print("\n[2] EXTRACTED LOCALIZED ENTITIES:")
     if state.extracted_entities:
         for ent in state.extracted_entities:
             print(f"  • {ent.type:<15}: '{ent.surface}' ➔ {ent.normalized}")
     else:
-        print("  (Không có thực thể)")
+        print("  (No entities found)")
 
     # DAG Plan
-    print("\n[3] KẾ HOẠCH THỰC THI (DAG EXECUTION PLAN):")
+    print("\n[3] DAG EXECUTION PLAN:")
     if state.plan:
-        print(f"  • Mục tiêu (Intents): {', '.join(state.plan.intents)}")
+        print(f"  • Intents: {', '.join(state.plan.intents)}")
         for step in state.plan.steps:
-            dep_str = f" [Phụ thuộc: {', '.join(step.depends_on)}]" if step.depends_on else ""
-            cond_str = f" [Điều kiện: {step.condition.from_step}.{step.condition.path}=={step.condition.equals}]" if step.condition else ""
-            print(f"  • Bước {step.step_id}: {step.tool}{dep_str}{cond_str}")
-            print(f"    Ghi chú: {step.rationale}")
+            dep_str = f" [Depends on: {', '.join(step.depends_on)}]" if step.depends_on else ""
+            cond_str = f" [Condition: {step.condition.from_step}.{step.condition.path}=={step.condition.equals}]" if step.condition else ""
+            print(f"  • Step {step.step_id}: {step.tool}{dep_str}{cond_str}")
+            print(f"    Rationale: {step.rationale}")
 
     # Tool Execution Results
-    print("\n[4] KẾT QUẢ THỰC THI TOOL (OPERATIONAL TOOLS RESULTS):")
+    print("\n[4] OPERATIONAL TOOL EXECUTION RESULTS:")
     if state.tool_results:
         for step_id, res in state.tool_results.items():
             st_icon = "✓ SUCCESS" if res.status == StepStatus.SUCCESS else f"✗ {res.status.value}"
-            print(f"  • [{step_id}] {res.tool}: {st_icon} ({res.latency_ms:.2f}ms, {res.attempts} lần thử)")
+            print(f"  • [{step_id}] {res.tool}: {st_icon} ({res.latency_ms:.2f}ms, {res.attempts} attempts)")
             if res.arguments:
                 print(f"    - Args:   {json.dumps(res.arguments, ensure_ascii=False)}")
             if res.output:
@@ -76,19 +76,19 @@ def dump_state_report(name: str, state: AgentState) -> None:
             if res.error:
                 print(f"    - Error:  {res.error}")
     else:
-        print("  (Không có tool nào được thực thi)")
+        print("  (No tools executed)")
 
     # Execution Trace / Node Latencies
-    print("\n[5] ĐO ĐẠC HIỆU NĂNG CÁC NODE (EXECUTION TRACE):")
+    print("\n[5] NODE LATENCIES & EXECUTION TRACE:")
     total_ms = 0.0
     for tr in state.execution_trace:
         print(f"  • {tr.node:<25}: {tr.duration_ms:>7.2f} ms")
         total_ms += tr.duration_ms
     print(f"  {'─'*35}")
-    print(f"  • TỔNG THỜI GIAN GRAPH:      {total_ms:>7.2f} ms")
+    print(f"  • TOTAL GRAPH TIME:          {total_ms:>7.2f} ms")
 
     # Final Synthesized Response
-    print("\n[6] PHẢN HỒI CUỐI CÙNG CHO NGƯỜI DÙNG (FINAL RESPONSE):")
+    print("\n[6] FINAL SYNTHESIZED RESPONSE:")
     print("┌" + "─" * 78 + "┐")
     for line in (state.final_response or "").split("\n"):
         print(f"│ {line:<76} │")
@@ -134,7 +134,7 @@ def main() -> None:
     dump_state_report("TC-03: LOCALIZED VIETNAMESE SLANG & ETA UPDATE", state3)
 
     print("\n" + "=" * 80)
-    print(" ★ TẤT CẢ 3 BÀI BENCHMARK ĐÃ HOÀN TẤT THÀNH CÔNG VỚI ĐỘ CHÍNH XÁC 100%!")
+    print(" ★ ALL 3 BENCHMARK TEST CASES COMPLETED SUCCESSFULLY WITH 100% ACCURACY!")
     print("=" * 80 + "\n")
 
 

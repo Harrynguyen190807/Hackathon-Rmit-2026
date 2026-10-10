@@ -102,7 +102,7 @@ class MockBackend:
         self._maybe_fail("check_inventory")
         product = self.inventory.get(sku)
         if product is None:
-            raise ToolError(f"SKU {sku} không tồn tại trong hệ thống WMS")
+            raise ToolError(f"SKU {sku} does not exist in WMS")
         if product.on_hand == 0:
             status = "OUT_OF_STOCK"
         elif product.on_hand < product.reorder_point:
@@ -126,10 +126,10 @@ class MockBackend:
         self._maybe_fail("create_purchase_order")
         product = self.inventory.get(sku)
         if product is None:
-            raise ToolError(f"SKU {sku} không tồn tại")
+            raise ToolError(f"SKU {sku} does not exist")
         vendor = VENDORS.get(vendor_id)
         if vendor is None:
-            raise ToolError(f"Nhà cung cấp {vendor_id} chưa được phê duyệt")
+            raise ToolError(f"Vendor {vendor_id} is not approved")
         now = self.clock()
         self._po_counter += 1
         return OrderConfirmation(
@@ -152,7 +152,7 @@ class MockBackend:
         self._maybe_fail("update_shipping_eta")
         shipment = self.shipments.get(tracking_id)
         if shipment is None:
-            raise ToolError(f"Không tìm thấy vận đơn {tracking_id}")
+            raise ToolError(f"Shipment {tracking_id} not found")
         new_eta = shipment.eta + timedelta(minutes=added_minutes)
         self.shipments[tracking_id] = _Shipment(shipment.carrier, new_eta)
         return TrackingUpdate(

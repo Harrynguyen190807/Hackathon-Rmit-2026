@@ -89,7 +89,7 @@ bool NumberParser::parseRational(const std::string& s, ParsedNumber& result) {
 
         if (den == 0) {
             result.category = NumberCategory::Invalid;
-            result.errorMsg = "Loi: Mau so khong the bang 0 (Division by zero)";
+            result.errorMsg = "Error: Denominator cannot be zero (Division by zero)";
             return true;
         }
 
@@ -260,7 +260,7 @@ ParsedNumber NumberParser::parse(const std::string& input) {
 
     if (trimmed.empty()) {
         res.category = NumberCategory::Invalid;
-        res.errorMsg = "Chuoi nhap vao bi rong";
+        res.errorMsg = "Input string is empty";
         return res;
     }
 
@@ -270,7 +270,7 @@ ParsedNumber NumberParser::parse(const std::string& input) {
     if (parseReal(trimmed, res)) return res;
 
     res.category = NumberCategory::Invalid;
-    res.errorMsg = "Khong the nhan dang dinh dang so: \"" + input + "\"";
+    res.errorMsg = "Cannot recognize number format: \"" + input + "\"";
     return res;
 }
 

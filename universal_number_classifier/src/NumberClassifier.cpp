@@ -9,7 +9,7 @@ ClassificationReport NumberClassifier::analyze(const std::string& input) {
 
     if (report.parsed.category == NumberCategory::Invalid) {
         report.isComplex = false;
-        report.primaryDescription = "Khong hop le: " + report.parsed.errorMsg;
+        report.primaryDescription = "Invalid input: " + report.parsed.errorMsg;
         return report;
     }
 
@@ -61,103 +61,103 @@ void NumberClassifier::generateTags(ClassificationReport& r) {
     r.tags.clear();
 
     if (!r.isComplex) {
-        r.tags.push_back("Khong hop le");
+        r.tags.push_back("Invalid");
         return;
     }
 
-    r.tags.push_back("Số phức (ℂ)");
+    r.tags.push_back("Complex Number (ℂ)");
 
     if (r.isPureImaginary) {
-        r.tags.push_back("Số thuần ảo (Purely Imaginary)");
+        r.tags.push_back("Pure Imaginary Number");
     }
 
     if (r.isReal) {
-        r.tags.push_back("Số thực (ℝ)");
+        r.tags.push_back("Real Number (ℝ)");
 
         if (r.isRational) {
-            r.tags.push_back("Số hữu tỉ (ℚ)");
+            r.tags.push_back("Rational Number (ℚ)");
         } else if (r.isIrrational) {
-            r.tags.push_back("Số vô tỉ (ℝ \\ ℚ)");
+            r.tags.push_back("Irrational Number (ℝ \\ ℚ)");
         }
 
         if (r.isInteger && r.integerAnalysis.has_value()) {
             const auto& ia = r.integerAnalysis.value();
-            r.tags.push_back("Số nguyên (ℤ)");
+            r.tags.push_back("Integer (ℤ)");
 
             if (r.isNatural) {
-                r.tags.push_back("Số tự nhiên (ℕ)");
+                r.tags.push_back("Natural Number (ℕ)");
             }
             if (r.isPositiveInteger) {
-                r.tags.push_back("Số tự nhiên dương (ℕ*)");
+                r.tags.push_back("Positive Integer (ℕ*)");
             }
 
             if (ia.isZero) {
-                r.tags.push_back("Số không (Zero)");
+                r.tags.push_back("Zero");
             } else {
-                r.tags.push_back(ia.isPositive ? "Số dương (Positive)" : "Số âm (Negative)");
+                r.tags.push_back(ia.isPositive ? "Positive" : "Negative");
             }
 
-            r.tags.push_back(ia.isEven ? "Số chẵn (Even)" : "Số lẻ (Odd)");
+            r.tags.push_back(ia.isEven ? "Even" : "Odd");
 
-            if (ia.isPrime) r.tags.push_back("Số nguyên tố (Prime)");
-            if (ia.isComposite) r.tags.push_back("Hợp số (Composite)");
-            if (ia.isUnit) r.tags.push_back("Đơn vị (Unit)");
+            if (ia.isPrime) r.tags.push_back("Prime Number");
+            if (ia.isComposite) r.tags.push_back("Composite Number");
+            if (ia.isUnit) r.tags.push_back("Unit");
 
-            if (ia.isSquare) r.tags.push_back("Số chính phương (Square)");
-            if (ia.isCube) r.tags.push_back("Số lập phương (Cube)");
-            if (ia.isPowerOf2) r.tags.push_back("Lũy thừa của 2 (Power of 2)");
+            if (ia.isSquare) r.tags.push_back("Perfect Square");
+            if (ia.isCube) r.tags.push_back("Perfect Cube");
+            if (ia.isPowerOf2) r.tags.push_back("Power of 2");
 
-            if (ia.isFibonacci) r.tags.push_back("Số Fibonacci");
-            if (ia.isPalindromic) r.tags.push_back("Số đối xứng (Palindrome)");
-            if (ia.isArmstrong) r.tags.push_back("Số Armstrong (Narcissistic)");
-            if (ia.isTriangular) r.tags.push_back("Số tam giác (Triangular)");
-            if (ia.isHappy) r.tags.push_back("Số hạnh phúc (Happy Number)");
-            if (ia.isAutomorphic) r.tags.push_back("Số tự mãn (Automorphic)");
-            if (ia.isFactorial) r.tags.push_back("Giai thừa (Factorial)");
+            if (ia.isFibonacci) r.tags.push_back("Fibonacci Number");
+            if (ia.isPalindromic) r.tags.push_back("Palindromic Number");
+            if (ia.isArmstrong) r.tags.push_back("Armstrong Number");
+            if (ia.isTriangular) r.tags.push_back("Triangular Number");
+            if (ia.isHappy) r.tags.push_back("Happy Number");
+            if (ia.isAutomorphic) r.tags.push_back("Automorphic Number");
+            if (ia.isFactorial) r.tags.push_back("Factorial");
 
-            if (ia.abundance == AbundanceType::Perfect) r.tags.push_back("Số hoàn hảo (Perfect Number)");
-            else if (ia.abundance == AbundanceType::Abundant) r.tags.push_back("Số dư thừa (Abundant Number)");
-            else if (ia.abundance == AbundanceType::Deficient) r.tags.push_back("Số thiếu hụt (Deficient Number)");
+            if (ia.abundance == AbundanceType::Perfect) r.tags.push_back("Perfect Number");
+            else if (ia.abundance == AbundanceType::Abundant) r.tags.push_back("Abundant Number");
+            else if (ia.abundance == AbundanceType::Deficient) r.tags.push_back("Deficient Number");
         }
     }
 }
 
 void NumberClassifier::generatePrimaryDescription(ClassificationReport& r) {
     if (!r.isComplex) {
-        r.primaryDescription = "Dau vao khong hop le.";
+        r.primaryDescription = "Invalid input.";
         return;
     }
 
     std::ostringstream oss;
     if (r.isPureImaginary) {
-        oss << "Đây là một SỐ THUẦN ẢO thuộc tập số phức (ℂ) với phần thực bằng 0 và phần ảo = "
-            << r.complexAnalysis.value.imag << ".";
+        oss << "This is a PURE IMAGINARY number in the complex set (ℂ) with real part 0 and imaginary part = "
+            << r.complexAnalysis.value.imag << "i.";
     } else if (!r.isReal) {
-        oss << "Đây là một SỐ PHỨC (ℂ) có cả phần thực (" << r.complexAnalysis.value.real
-            << ") và phần ảo (" << r.complexAnalysis.value.imag << "i).";
+        oss << "This is a COMPLEX NUMBER (ℂ) with real part (" << r.complexAnalysis.value.real
+            << ") and imaginary part (" << r.complexAnalysis.value.imag << "i).";
     } else {
         // Real
         if (r.isInteger && r.integerAnalysis.has_value()) {
             const auto& ia = r.integerAnalysis.value();
-            oss << "Đây là một SỐ NGUYÊN (ℤ) ";
+            oss << "This is an INTEGER (ℤ) ";
             if (ia.isZero) {
-                oss << "[Số 0], vừa chẵn, thuộc tập số tự nhiên ℕ.";
+                oss << "[Zero], even, belonging to the natural numbers ℕ.";
             } else {
-                oss << (ia.isPositive ? "dương " : "âm ")
-                    << (ia.isEven ? "chẵn " : "lẻ ");
-                if (ia.isPrime) oss << "và là SỐ NGUYÊN TỐ.";
-                else if (ia.isComposite) oss << "và là HỢP SỐ.";
+                oss << (ia.isPositive ? "positive " : "negative ")
+                    << (ia.isEven ? "even " : "odd ");
+                if (ia.isPrime) oss << "and a PRIME NUMBER.";
+                else if (ia.isComposite) oss << "and a COMPOSITE NUMBER.";
                 else oss << ".";
             }
         } else if (r.parsed.category == NumberCategory::Rational) {
-            oss << "Đây là một SỐ HỮU TỈ (ℚ) biểu diễn dưới dạng phân số "
+            oss << "This is a RATIONAL NUMBER (ℚ) represented as fraction "
                 << r.parsed.rationalVal.num << "/" << r.parsed.rationalVal.den
                 << " ≈ " << r.parsed.realVal << ".";
         } else if (r.parsed.category == NumberCategory::MathematicalConstant) {
-            oss << "Đây là một HẰNG SỐ TOÁN HỌC VÔ TỈ: " << r.parsed.constantName
+            oss << "This is an IRRATIONAL MATHEMATICAL CONSTANT: " << r.parsed.constantName
                 << " ≈ " << r.parsed.realVal << ".";
         } else {
-            oss << "Đây là một SỐ THỰC (ℝ) với giá trị thập phân ≈ " << r.parsed.realVal << ".";
+            oss << "This is a REAL NUMBER (ℝ) with decimal value ≈ " << r.parsed.realVal << ".";
         }
     }
     r.primaryDescription = oss.str();

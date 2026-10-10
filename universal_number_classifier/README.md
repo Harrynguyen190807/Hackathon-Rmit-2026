@@ -1,133 +1,137 @@
 # Universal Number Classifier & Analyzer (C++20)
 
-**Dự án con:** Phân loại và phân tích số học toàn diện trong C++20  
-**Tác giả:** Team Cơ Rô Chuồng Bích — RMIT Hackathon 2026
+**Subproject:** Comprehensive Mathematical Number Classification & Number-Theoretic Analysis in C++20  
+**Author:** Team Suits (Co Ro Chuong Bich) — RMIT Hackathon 2026
 
 ---
 
-## 📖 Giới thiệu (Overview)
+## 📖 Overview
 
-**Universal Number Classifier & Analyzer** là một hệ thống C++20 hiện đại, tối ưu và đa năng, được thiết kế để nhận diện, phân tích và phân loại chuyên sâu mọi định dạng số học mà người dùng nhập vào.
+The **Universal Number Classifier & Analyzer** is a high-performance, modern C++20 engine designed to parse, classify, and extract mathematical properties from arbitrary numerical input.
 
-Hệ thống tự động phát hiện số thuộc tập hợp nào, giải mã cấu trúc đại số và trích xuất hàng loạt các tính chất số học đặc biệt.
+The system determines mathematical set membership ($\mathbb{C}, \mathbb{R}, \mathbb{Q}, \mathbb{R} \setminus \mathbb{Q}, \mathbb{Z}, \mathbb{N}, \mathbb{N}^*$), parses algebraic representations, and computes rigorous number-theoretic properties.
 
 ---
 
-## ✨ Các tính năng phân loại chính
+## ✨ Core Classification Capabilities
 
-### 1. Phân loại theo tập hợp số học (Mathematical Sets):
-* $\mathbb{C}$ **(Tập số phức - Complex numbers):** Nhận diện dạng chuẩn $a + bi$, $a - bj$, số thuần ảo ($5i$, $-i$), tự động tính:
-  * Phần thực $\text{Re}(z)$ & Phần ảo $\text{Im}(z)$
-  * Modun $|z| = \sqrt{a^2 + b^2}$
-  * Argument $\text{Arg}(z)$ (cả Radian và Độ)
-  * Số liên hợp $\bar{z} = a - bi$
-  * Dạng lượng giác (Polar form: $r(\cos\theta + i\sin\theta)$) và dạng hàm mũ ($r e^{i\theta}$)
-* $\mathbb{R}$ **(Tập số thực - Real numbers):** Số dương, số âm, số 0.
-* $\mathbb{Q}$ **(Tập số hữu tỉ - Rational numbers):** Phân số dạng $p/q$, tự động tối giản ước chung lớn nhất (GCD).
-* $\mathbb{R} \setminus \mathbb{Q}$ **(Tập số vô tỉ - Irrational numbers):** Nhận diện các hằng số toán học kinh điển:
-  * $\pi \approx 3.14159...$ (Số Pi)
-  * $e \approx 2.71828...$ (Hằng số Euler)
-  * $\phi \approx 1.61803...$ (Tỷ lệ vàng - Golden Ratio)
+### 1. Mathematical Set Classification:
+* $\mathbb{C}$ **(Complex Numbers):** Recognizes standard formats $a + bi$, $a - bj$, pure imaginary values ($5i$, $-i$), and computes:
+  * Real part $\text{Re}(z)$ & Imaginary part $\text{Im}(z)$
+  * Modulus / Magnitude $|z| = \sqrt{a^2 + b^2}$
+  * Argument $\text{Arg}(z)$ (both Radians and Degrees)
+  * Complex conjugate $\bar{z} = a - bi$
+  * Polar form ($r(\cos\theta + i\sin\theta)$) and exponential form ($r e^{i\theta}$)
+* $\mathbb{R}$ **(Real Numbers):** Positive, negative, zero.
+* $\mathbb{Q}$ **(Rational Numbers):** Fractional inputs $p/q$, simplified via Greatest Common Divisor ($\gcd$).
+* $\mathbb{R} \setminus \mathbb{Q}$ **(Irrational Numbers):** Recognizes canonical mathematical constants:
+  * $\pi \approx 3.14159...$ (Archimedes' constant)
+  * $e \approx 2.71828...$ (Euler's number)
+  * $\phi \approx 1.61803...$ (Golden Ratio)
   * $\sqrt{2} \approx 1.41421...$, $\sqrt{3} \approx 1.73205...$
-* $\mathbb{Z}$ **(Tập số nguyên - Integers)**
-* $\mathbb{N}$ **(Tập số tự nhiên - Natural numbers, $n \ge 0$)**
-* $\mathbb{N}^*$ **(Tập số tự nhiên dương, $n > 0$)**
+* $\mathbb{Z}$ **(Integers)**
+* $\mathbb{N}$ **(Natural Numbers, $n \ge 0$)**
+* $\mathbb{N}^*$ **(Positive Integers, $n > 0$)**
 
-### 2. Thuật toán lý thuyết số học nguyên chuyên sâu (Number Theory):
-Khi số thuộc tập số nguyên $\mathbb{Z}$:
-* **Nguyên tố & Hợp số:** Thuật toán kiểm tra số nguyên tố tối ưu $O(\sqrt{n})$ và phân tích thừa số nguyên tố (Prime Factorization, ví dụ: $120 = 2^3 \times 3 \times 5$).
-* **Ước số & Tổng ước:** Liệt kê toàn bộ ước số, tính tổng các ước số thực sự (Proper Divisors).
-* **Số hoàn hảo (Perfect Number):** Tổng các ước thực sự bằng chính nó (ví dụ: $6, 28, 496, 8128$).
-* **Số dư thừa (Abundant)** / **Số thiếu hụt (Deficient)**.
-* **Số chính phương (Square)** ($n = k^2$) & **Số lập phương (Cube)** ($n = k^3$).
-* **Lũy thừa của 2 (Power of 2):** Kiểm tra nhanh qua bitwise $(n \& (n-1)) == 0$.
-* **Dãy số Fibonacci:** Kiểm tra nghiệm $5n^2 \pm 4$ là số chính phương.
-* **Số đối xứng (Palindromic number):** Đọc xuôi ngược như nhau (ví dụ: $121, 1331$).
-* **Số Armstrong / Narcissistic:** Tổng các chữ số mũ $k$ bằng chính nó (ví dụ: $153 = 1^3 + 5^3 + 3^3$).
-* **Số tam giác (Triangular number):** Thỏa mãn $n = k(k+1)/2$.
-* **Số hạnh phúc (Happy number):** Chuỗi tổng bình phương các chữ số hội tụ về 1.
-* **Số tự mãn (Automorphic number):** Bình phương tận cùng bằng chính nó (ví dụ: $25^2 = 625$).
-* **Số giai thừa (Factorial):** Kiểm tra $n = k!$.
+### 2. Number-Theoretic Algorithms ($\mathbb{Z}$):
+When an input belongs to $\mathbb{Z}$:
+* **Primality & Composites:** $O(\sqrt{n})$ primality testing and prime factorization ($120 = 2^3 \times 3 \times 5$).
+* **Divisors & Aliquot Sum:** Enumerates all divisors and calculates the sum of proper divisors.
+* **Abundance Classification:**
+  * **Perfect Number:** Sum of proper divisors equals the number itself ($6, 28, 496, 8128$).
+  * **Abundant Number:** Sum of proper divisors exceeds the number.
+  * **Deficient Number:** Sum of proper divisors is less than the number.
+* **Powers & Roots:**
+  * **Perfect Square** ($n = k^2$) & **Perfect Cube** ($n = k^3$).
+  * **Power of 2:** Bitwise evaluation via $(n \& (n - 1)) == 0$.
+* **Special Integer Sequences & Properties:**
+  * **Fibonacci Sequence:** Verified via square tests on $5n^2 \pm 4$.
+  * **Palindromic Number:** Identical read forward and backward ($121, 1331$).
+  * **Armstrong / Narcissistic Number:** Sum of its digits raised to power of digit length equals the number ($153 = 1^3 + 5^3 + 3^3$).
+  * **Triangular Number:** Satisfies $n = k(k+1)/2$.
+  * **Happy Number:** Sum-of-squared-digits sequence converges to 1.
+  * **Automorphic Number:** Square ends with the digits of the original number ($25^2 = 625$).
+  * **Factorial Number:** Verifies $n = k!$.
 
 ---
 
-## 📁 Cấu trúc thư mục (Directory Structure)
+## 📁 Directory Structure
 
 ```text
 universal_number_classifier/
 ├── include/
-│   ├── Common.hpp            # Định nghĩa kiểu dữ liệu, hằng số, cấu trúc cơ bản
-│   ├── ComplexProperties.hpp # Phân tích modun, argument, dạng lượng giác số phức
-│   ├── Formatter.hpp         # Trực quan hóa kết quả (ANSI colors, bảng biểu)
-│   ├── IntegerProperties.hpp # Các thuật toán lý thuyết số nguyên
-│   ├── NumberClassifier.hpp  # Logic điều phối và phân loại tập hợp số
-│   └── NumberParser.hpp      # Bộ phân tích cú pháp chuỗi đầu vào đa dạng
+│   ├── Common.hpp            # Fundamental data types, constants, structures
+│   ├── ComplexProperties.hpp # Modulus, argument, polar form analysis
+│   ├── Formatter.hpp         # Terminal formatting (ANSI color codes, tabular reports)
+│   ├── IntegerProperties.hpp # Number theory algorithms (primes, factors, sequences)
+│   ├── NumberClassifier.hpp  # High-level classifier & set membership logic
+│   └── NumberParser.hpp      # Robust multi-format numerical string parser
 ├── src/
 │   ├── ComplexProperties.cpp
 │   ├── Formatter.cpp
 │   ├── IntegerProperties.cpp
 │   ├── NumberClassifier.cpp
 │   ├── NumberParser.cpp
-│   └── main.cpp              # Entry point CLI (Interactive REPL & Direct Argument)
+│   └── main.cpp              # CLI entry point (Interactive REPL & Direct Argument mode)
 ├── tests/
-│   └── test_classifier.cpp   # Bộ Unit Tests tự động (100% pass)
-├── build.sh                  # Shell script biên dịch nhanh bằng g++ (C++20)
-├── Makefile                  # Makefile chuẩn
-└── README.md                 # Tài liệu module
+│   └── test_classifier.cpp   # Automated unit test suite (100% passing)
+├── build.sh                  # One-click build script using g++ (C++20)
+├── Makefile                  # Standard Makefile
+└── README.md                 # Module documentation
 ```
 
 ---
 
-## 🚀 Hướng dẫn biên dịch & Chạy (Build & Run)
+## 🚀 Build & Run Guide
 
-Mở terminal trong thư mục này:
+Open a terminal in this directory:
 ```bash
 cd universal_number_classifier
 ```
 
-### 1. Biên dịch
+### 1. Build
 ```bash
 chmod +x build.sh
 ./build.sh
 ```
-*Hoặc sử dụng `make`:*
+*Or using `make`:*
 ```bash
 make
 ```
 
-### 2. Chạy Unit Tests tự động
+### 2. Run Automated Unit Tests
 ```bash
 ./bin/test_classifier
 ```
 
-### 3. Thực thi chương trình
+### 3. Run the Application
 
-#### Chế độ tham số dòng lệnh một lần (Direct Arguments):
+#### Direct Argument Mode:
 ```bash
-# Kiểm tra số nguyên tố lớn
+# Analyze a large prime
 ./bin/number_classifier 997
 
-# Kiểm tra số hoàn hảo
+# Analyze a perfect number
 ./bin/number_classifier 28
 
-# Kiểm tra số phức
+# Analyze a complex number
 ./bin/number_classifier "3 + 4i"
 
-# Kiểm tra số thuần ảo
+# Analyze a pure imaginary number
 ./bin/number_classifier "-5i"
 
-# Kiểm tra phân số hữu tỉ
+# Analyze a rational fraction
 ./bin/number_classifier "3/4"
 
-# Kiểm tra hằng số toán học
+# Analyze an irrational mathematical constant
 ./bin/number_classifier "pi"
 ```
 
-#### Chế độ tương tác liên tục (Interactive REPL):
+#### Interactive REPL Mode:
 ```bash
 ./bin/number_classifier
 ```
-Giao diện dòng lệnh sẽ xuất hiện để bạn nhập thử nghiệm:
+Interactive prompt:
 ```text
 num-detect > 153
 num-detect > 3 - 4j
@@ -138,35 +142,37 @@ num-detect > exit
 
 ---
 
-## 🧪 Ví dụ kết quả thực tế
+## 🧪 Sample Execution Output
 
 ```text
 ────────────────────────────────────────────────────────────────────────
- KẾT QUẢ PHÂN TÍCH SỐ HỌC: 28
+ NUMBER ANALYSIS REPORT: 28
 ────────────────────────────────────────────────────────────────────────
-▶ TỔNG QUAN: Đây là một SỐ NGUYÊN (ℤ) dương chẵn và là HỢP SỐ.
+▶ SUMMARY: This is an INTEGER (ℤ) positive even and a COMPOSITE NUMBER.
 
-▶ THUỘC CÁC TẬP HỢP SỐ (MATHEMATICAL SETS):
-  [✓ THUỘC]  ℂ   (Tập số phức - Complex numbers)
-  [✓ THUỘC]  ℝ   (Tập số thực - Real numbers)
-  [✓ THUỘC]  ℚ   (Tập số hữu tỉ - Rational numbers)
-  [✗ KHÔNG]  ℝ\ℚ (Tập số vô tỉ - Irrational numbers)
-  [✓ THUỘC]  ℤ   (Tập số nguyên - Integers)
-  [✓ THUỘC]  ℕ   (Tập số tự nhiên - Natural numbers, n ≥ 0)
-  [✓ THUỘC]  ℕ*  (Tập số tự nhiên dương, n > 0)
+▶ MATHEMATICAL SET MEMBERSHIP:
+  [✓ IN SET]  ℂ   (Complex numbers)
+  [✓ IN SET]  ℝ   (Real numbers)
+  [✓ IN SET]  ℚ   (Rational numbers)
+  [✗ NOT IN]  ℝ\ℚ (Irrational numbers)
+  [✓ IN SET]  ℤ   (Integers)
+  [✓ IN SET]  ℕ   (Natural numbers, n ≥ 0)
+  [✓ IN SET]  ℕ*  (Positive integers, n > 0)
 
-▶ CÁC NHÃN ĐẶC TÍNH (CHARACTERISTIC TAGS):
-  [Số phức (ℂ)] [Số thực (ℝ)] [Số hữu tỉ (ℚ)] [Số nguyên (ℤ)] [Số tự nhiên (ℕ)] [Số tự nhiên dương (ℕ*)] [Số dương (Positive)] [Số chẵn (Even)] [Hợp số (Composite)] [Số tam giác (Triangular)] [Số hạnh phúc (Happy Number)] [Số hoàn hảo (Perfect Number)]
+▶ CHARACTERISTIC TAGS:
+  [Complex Number (ℂ)] [Real Number (ℝ)] [Rational Number (ℚ)] [Integer (ℤ)] [Natural Number (ℕ)] [Positive Integer (ℕ*)] [Positive] [Even] [Composite Number] [Triangular Number] [Happy Number] [Perfect Number]
 
-▶ ĐẶC TÍNH SỐ HỌC NGUYÊN (NUMBER-THEORETIC PROPERTIES):
-  • Dấu & Tính chẵn lẻ:            Số dương | Số chẵn (Even)
-  • Nguyên tố / Hợp số:            Hợp số (Composite Number)
-  • Phân tích thừa số nguyên tố:   2^2 × 7
-  • Danh sách ước số (6 ước):       1, 2, 4, 7, 14, 28
-  • Tổng các ước thực sự (Proper): 28
-  • Các tính chất dãy số đặc biệt:
-    - Là số tam giác thứ 7 (T(7) = n(n+1)/2).
-    - Là số hạnh phúc (Happy number).
-    - ★ LÀ SỐ HOÀN HẢO (Perfect Number - tổng ước thực sự bằng chính nó)!
+▶ NUMBER-THEORETIC PROPERTIES:
+  • Sign & Parity:                 Positive | Even
+  • Primality:                     Composite Number
+  • Prime Factorization:           2^2 × 7
+  • Divisors list (6 divisors):    1, 2, 4, 7, 14, 28
+  • Sum of proper divisors:        28
+  • Powers & Roots check:
+    - Not a perfect square or perfect cube.
+  • Special sequence properties:
+    - Triangular number T(7) = n(n+1)/2.
+    - Happy number.
+    - ★ PERFECT NUMBER (Sum of proper divisors equals itself)!
 ────────────────────────────────────────────────────────────────────────
 ```

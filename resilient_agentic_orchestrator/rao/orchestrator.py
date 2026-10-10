@@ -98,10 +98,10 @@ class ResilientOrchestrator:
             state.bump_risk(fw_decision.confidence)
             state.halted = True
             state.halt_reason = (
-                f"Phát hiện tấn công prompt injection trực tiếp: {'; '.join(fw_decision.reasons)}"
+                f"Direct prompt injection attack detected: {'; '.join(fw_decision.reasons)}"
             )
             state.final_response = (
-                "Yêu cầu bị từ chối bởi hệ thống bảo mật (Phát hiện chỉ thị độc hại hoặc can thiệp prompt)."
+                "Request blocked by security guardrails (Malicious prompt injection or override attempt detected)."
             )
             state.final_payload = {
                 "status": "BLOCKED",
@@ -126,7 +126,7 @@ class ResilientOrchestrator:
                     verdict=q_res.decision.verdict,
                     confidence=q_res.decision.confidence,
                     reasons=q_res.decision.reasons
-                    + ([f"Đã trung hòa {q_res.removed_segments} đoạn chứa lệnh độc hại"] if q_res.removed_segments else []),
+                    + ([f"Neutralized {q_res.removed_segments} malicious prompt injection segments"] if q_res.removed_segments else []),
                 )
             )
             if q_res.decision.verdict is Verdict.BLOCKED:
@@ -205,7 +205,7 @@ class ResilientOrchestrator:
                     status=StepStatus.PENDING_APPROVAL,
                     arguments=None,
                     output=None,
-                    error=f"Tạm dừng: Rủi ro vượt ngưỡng ({state.risk_score:.2f} >= {self.config.human_review_risk_threshold:.2f}). Yêu cầu phê duyệt thủ công.",
+                    error=f"Paused: Risk exceeded threshold ({state.risk_score:.2f} >= {self.config.human_review_risk_threshold:.2f}). Requires manual human approval.",
                 )
                 continue
 
@@ -219,7 +219,7 @@ class ResilientOrchestrator:
                         step_id=step.step_id,
                         tool=step.tool,
                         status=StepStatus.SKIPPED_DEPENDENCY,
-                        error=f"Bỏ qua vì bước phụ thuộc {cond.from_step} không thành công",
+                        error=f"Skipped because upstream dependency step {cond.from_step} was not successful",
                     )
                     continue
 
@@ -230,7 +230,7 @@ class ResilientOrchestrator:
                         step_id=step.step_id,
                         tool=step.tool,
                         status=StepStatus.SKIPPED_CONDITION,
-                        error=f"Bỏ qua: Điều kiện {cond.from_step}.{cond.path} == {cond.equals} không thỏa mãn (thực tế: {actual_val})",
+                        error=f"Skipped: Condition {cond.from_step}.{cond.path} == {cond.equals} not satisfied (actual: {actual_val})",
                     )
                     continue
 
@@ -242,11 +242,11 @@ class ResilientOrchestrator:
                 if isinstance(arg_val, StepRef):
                     upstream = state.tool_results.get(arg_val.from_step)
                     if not upstream or upstream.status != StepStatus.SUCCESS or not upstream.output:
-                        arg_resolution_error = f"Không thể lấy tham số từ bước {arg_val.from_step}"
+                        arg_resolution_error = f"Cannot resolve parameter from upstream step {arg_val.from_step}"
                         break
                     val = upstream.output.get(arg_val.path)
                     if val is None:
-                        arg_resolution_error = f"Trường '{arg_val.path}' không tồn tại trong kết quả của {arg_val.from_step}"
+                        arg_resolution_error = f"Field '{arg_val.path}' does not exist in output of {arg_val.from_step}"
                         break
                     resolved_args[arg_key] = val
                 elif isinstance(arg_val, TemplateArg):
@@ -405,7 +405,7 @@ class ResilientOrchestrator:
                     source="response",
                     verdict=Verdict.BLOCKED,
                     confidence=0.95,
-                    reasons=["Phát hiện nỗ lực rò rỉ khóa bảo mật / secret trong phản hồi"],
+                    reasons=["Secret or credential exfiltration attempt detected in output response"],
                 )
             )
 

@@ -42,7 +42,7 @@ class StrictResult(BaseModel):
 # check_inventory
 # --------------------------------------------------------------------------- #
 class CheckInventoryArgs(StrictArgs):
-    sku: str = Field(pattern=SKU_PATTERN, description="Mã hàng, ví dụ LAP-1001")
+    sku: str = Field(pattern=SKU_PATTERN, description="Stock Keeping Unit (SKU), e.g. LAP-1001")
 
 
 class InventoryStatus(StrictResult):
@@ -63,7 +63,7 @@ class InventoryStatus(StrictResult):
 class CreatePurchaseOrderArgs(StrictArgs):
     sku: str = Field(pattern=SKU_PATTERN)
     quantity: int = Field(ge=1, le=100_000)
-    vendor_id: str = Field(pattern=VENDOR_PATTERN, description="Mã nhà cung cấp (NCC)")
+    vendor_id: str = Field(pattern=VENDOR_PATTERN, description="Vendor ID (NCC), e.g. NCC-017")
 
 
 class OrderConfirmation(StrictResult):
@@ -98,7 +98,7 @@ class SendSlackAlertArgs(StrictArgs):
 # --------------------------------------------------------------------------- #
 class UpdateShippingEtaArgs(StrictArgs):
     tracking_id: str = Field(pattern=TRACKING_PATTERN)
-    added_minutes: int = Field(ge=1, le=10_080, description="Số phút cộng thêm vào ETA (tối đa 7 ngày)")
+    added_minutes: int = Field(ge=1, le=10_080, description="Added minutes to ETA (maximum 7 days)")
     reason: str = Field(min_length=3, max_length=500)
 
 

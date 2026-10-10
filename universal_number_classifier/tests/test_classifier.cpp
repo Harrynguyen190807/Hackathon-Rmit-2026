@@ -4,7 +4,7 @@
 #include <cmath>
 
 void testPrimes() {
-    std::cout << "[Test] Kiem tra so nguyen to... ";
+    std::cout << "[Test] Checking prime numbers... ";
     assert(numsys::IntegerProperties::isPrime(2) == true);
     assert(numsys::IntegerProperties::isPrime(3) == true);
     assert(numsys::IntegerProperties::isPrime(5) == true);
@@ -17,7 +17,7 @@ void testPrimes() {
 }
 
 void testSpecialNumbers() {
-    std::cout << "[Test] Kiem tra so dac biet (Perfect, Fibonacci, Armstrong)... ";
+    std::cout << "[Test] Checking special numbers (Perfect, Fibonacci, Armstrong)... ";
     // Perfect numbers
     assert(numsys::IntegerProperties::getAbundance(6) == numsys::AbundanceType::Perfect);
     assert(numsys::IntegerProperties::getAbundance(28) == numsys::AbundanceType::Perfect);
@@ -44,7 +44,7 @@ void testSpecialNumbers() {
 }
 
 void testFractionsAndRationals() {
-    std::cout << "[Test] Kiem tra phan so va so huu ti... ";
+    std::cout << "[Test] Checking fractions and rational numbers... ";
     auto r1 = numsys::NumberClassifier::analyze("3/4");
     assert(r1.isReal == true);
     assert(r1.isRational == true);
@@ -60,7 +60,7 @@ void testFractionsAndRationals() {
 }
 
 void testComplexNumbers() {
-    std::cout << "[Test] Kiem tra so phuc & thuan ao... ";
+    std::cout << "[Test] Checking complex & pure imaginary numbers... ";
     auto c1 = numsys::NumberClassifier::analyze("3+4i");
     assert(c1.isComplex == true);
     assert(c1.isReal == false);
@@ -81,7 +81,7 @@ void testComplexNumbers() {
 }
 
 void testConstants() {
-    std::cout << "[Test] Kiem tra hang so vo ti (pi, e, sqrt2)... ";
+    std::cout << "[Test] Checking irrational mathematical constants (pi, e, sqrt2)... ";
     auto piRep = numsys::NumberClassifier::analyze("pi");
     assert(piRep.isReal == true);
     assert(piRep.isIrrational == true);
@@ -96,12 +96,12 @@ void testConstants() {
 }
 
 int main() {
-    std::cout << "=== BẮT ĐẦU CHẠY UNIT TESTS CHO HỆ THỐNG PHÂN LOẠI SỐ ===\n\n";
+    std::cout << "=== RUNNING NUMBER CLASSIFIER UNIT TESTS ===\n\n";
     testPrimes();
     testSpecialNumbers();
     testFractionsAndRationals();
     testComplexNumbers();
     testConstants();
-    std::cout << "\n>>> TẤT CẢ UNIT TESTS ĐỀU THÀNH CÔNG (100% PASSED)!\n";
+    std::cout << "\n>>> ALL UNIT TESTS COMPLETED SUCCESSFULLY (100% PASSED)!\n";
     return 0;
 }

@@ -5,7 +5,7 @@
 #include <vector>
 
 void runQuickTest() {
-    std::cout << "\n>>> ĐANG CHẠY BỘ KIỂM TRA MẪU (DEMO TEST SUITE):\n\n";
+    std::cout << "\n>>> RUNNING DEMO TEST SUITE:\n\n";
     std::vector<std::string> testCases = {
         "997",          // Prime
         "28",           // Perfect number
@@ -63,7 +63,7 @@ int main(int argc, char* argv[]) {
     while (true) {
         std::cout << "\033[1;36mnum-detect > \033[0m";
         if (!std::getline(std::cin, line)) {
-            std::cout << "\nTam biet!\n";
+            std::cout << "\nGoodbye!\n";
             break;
         }
 
@@ -74,7 +74,7 @@ int main(int argc, char* argv[]) {
         std::string cmd = line.substr(start, end - start + 1);
 
         if (cmd == "exit" || cmd == "quit" || cmd == "q") {
-            std::cout << "Tam biet!\n";
+            std::cout << "Goodbye!\n";
             break;
         }
         if (cmd == "help" || cmd == "h") {
