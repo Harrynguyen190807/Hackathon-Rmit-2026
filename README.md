@@ -2,17 +2,18 @@
 
 > **Team:** Suits (Co Ro Chuong Bich)  
 > **Event:** RMIT Hackathon 2026  
-> **Core Disciplines:** Multi-Agent Systems, Computational Fluid Dynamics (CFD), and High-Performance Modern C++20
+> **Core Disciplines:** Multi-Agent Systems, Computational Fluid Dynamics (CFD), High-Performance Modern C++20, and Meta-Skills Hub for Autonomous AI Agents
 
 ---
 
 ## 📌 Repository Overview
 
-This repository contains engineering solutions developed by **Team Suits (Co Ro Chuong Bich)** for the RMIT Hackathon 2026, encompassing three core subprojects:
+This repository contains engineering solutions and architectural playbooks developed by **Team Suits (Co Ro Chuong Bich)** for the RMIT Hackathon 2026, encompassing core engineering subprojects and an Antigravity Meta-Skills Hub:
 
 1. 🛡️ **Resilient Agentic Orchestrator (RAO):** A production-grade multi-agent StateGraph engine equipped with dual-layer security guardrails (OWASP Top 10 for LLMs), specialized Vietnamese logistics NLP (slang and shorthand resolution), and strict Pydantic v2 data contracts.
 2. 🔢 **Universal Number Classifier & Analyzer:** A versatile, high-performance mathematical classification and number-theoretic analysis system engineered in modern **C++20**.
 3. 🚴 **FEniCS CFD Cycling Aerodynamics & Power Simulation:** A finite element fluid dynamics solver computing the incompressible **Navier-Stokes equations** via **FEniCS** to evaluate aerodynamic drag and mechanical power (Watts) for an elite carbon road cyclist ascending a 5% slope at 40 km/h.
+4. 🚀 **Hackathon 2026 Skills Hub (`.agents/skills/`):** Full-stack playbooks & meta-skills adhering to Google Antigravity standards for rapid development, low-resource RAG, prompt defense, rapid UI, and pitch orchestration.
 
 ---
 
@@ -20,6 +21,18 @@ This repository contains engineering solutions developed by **Team Suits (Co Ro 
 
 ```text
 Hackathon-Rmit-2026/
+├── 📁 .agents/skills/                  # [META-SKILLS HUB] Antigravity Playbooks & Meta-Skills
+│   ├── hackathon-fastapi-backend/     # Async FastAPI, SSE streaming, CORS, crash-proof handlers
+│   │   └── SKILL.md
+│   ├── rag-chromadb-pipeline/         # Local ChromaDB, Vietnamese chunking, hybrid top-k, citations
+│   │   └── SKILL.md
+│   ├── cyber-prompt-guard/            # OWASP LLM defense, injection firewall, Canary tokens, PII masking
+│   │   └── SKILL.md
+│   ├── rapid-prototype-ui/            # Streamlit & Next.js 15 UI, SOC terminal logs, risk meter
+│   │   └── SKILL.md
+│   └── pitch-demo-orchestrator/       # 180s pitch script, Murphy's law backup, Mermaid architecture
+│       └── SKILL.md
+│
 ├── 📁 resilient_agentic_orchestrator/  # [PROJECT 1] Multi-Agent Security & NLP Engine (Python 3.11+)
 │   ├── rao/
 │   │   ├── schemas.py                 # Pydantic v2 Data Contracts (extra='forbid', strict=True)
@@ -47,7 +60,7 @@ Hackathon-Rmit-2026/
 │   ├── output/                        # Analysis Plots & ParaView Visualization Datasets (.pvd, .vtu)
 │   └── README.md                      # Theoretical Mechanics & Simulation Findings
 │
-├── 📁 Hung-practice/                   # Member experimentation workspace
+├── 📁 scripts/                        # Utility scripts (e.g. symlink_skills)
 ├── .gitignore                         # Git exclusion rules
 └── README.md                          # Repository Master Documentation
 ```
@@ -103,15 +116,35 @@ Hackathon-Rmit-2026/
 
 ---
 
+### 4. 🚀 Hackathon 2026 Skills Hub (`.agents/skills/`)
+* **Directory:** [`.agents/skills/`](./.agents/skills/)
+* **Overview:** Tiêu chuẩn hóa các Meta-Skills dành riêng cho Agent trên Google Antigravity, sẵn sàng kích hoạt trong 24h - 48h thi đấu Hackathon:
+
+| Skill Identifier | Detailed Playbook | Core Focus |
+| :--- | :--- | :--- |
+| **`hackathon-fastapi-backend`** | [`SKILL.md`](./.agents/skills/hackathon-fastapi-backend/SKILL.md) | FastAPI bất đồng bộ, CORS đa cổng, SSE Streaming, Dependency Injection, Crash-Proof Handlers. |
+| **`rag-chromadb-pipeline`** | [`SKILL.md`](./.agents/skills/rag-chromadb-pipeline/SKILL.md) | ChromaDB cục bộ, Vietnamese sentence-sliding chunker, hybrid top-k retrieval, citations & anti-hallucination. |
+| **`cyber-prompt-guard`** | [`SKILL.md`](./.agents/skills/cyber-prompt-guard/SKILL.md) | OWASP LLM defense, Canary tokens, Delimiter isolation, Vietnamese PII redaction, Sliding-window rate limiter. |
+| **`rapid-prototype-ui`** | [`SKILL.md`](./.agents/skills/rapid-prototype-ui/SKILL.md) | Dark-mode/Cyberpunk Streamlit & Next.js 15 UI, KPI cards, real-time SOC log console, Mock Failover Switch. |
+| **`pitch-demo-orchestrator`** | [`SKILL.md`](./.agents/skills/pitch-demo-orchestrator/SKILL.md) | 180-second golden path pitch script, Murphy's Law offline backup protocol, Mermaid architecture diagram. |
+
+* **Porting sang dự án bất kỳ:**
+  ```bash
+  cp -r .agents/skills/* /path/to/any-new-project/.agents/skills/
+  ```
+
+---
+
 ## 🛠️ Technology Stack
 
 | Domain | Technologies & Libraries |
 | :--- | :--- |
+| **Meta-Skills & Agent Architecture** | Google Antigravity, YAML Frontmatter, Fast-inference Prompt Engineering |
 | **Agentic Orchestration & Security** | Python 3.11+, Pydantic v2, StateGraph Engine, Multi-View Regex, Subword Hashing, BM25 |
 | **Systems & High-Performance Computing** | C++20, g++ 15.2, Makefile |
 | **Scientific Computing & CFD** | FEniCS 2019.2, mshr, PETSc, MUMPS, ParaView 6.1.1 |
 | **Testing & CI/CD** | Pytest, Git, GitHub Actions |
-| **Execution Environment** | Ubuntu 26.04 LTS on WSL 2 (Windows Subsystem for Linux) |
+| **Execution Environment** | Ubuntu 26.04 LTS on WSL 2 / Windows 11 |
 
 ---
 
