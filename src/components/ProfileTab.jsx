@@ -14,10 +14,6 @@ import {
   AlertOctagon,
   Pill,
   FileText,
-  Dumbbell,
-  Users,
-  MessageSquare,
-  Settings,
   LogOut,
   ChevronRight,
   Lock,
@@ -31,7 +27,7 @@ export default function ProfileTab({ user, onNavigate, onLogout }) {
   const [clinicianAccessGranted, setClinicianAccessGranted] = useState(false);
 
   const handleCopyId = () => {
-    const idText = user?.vitaId || 'VT-3311045090';
+    const idText = user?.vitalId || user?.vitaId || 'VT-3311045090';
     if (navigator.clipboard) {
       navigator.clipboard.writeText(idText);
     }
@@ -41,7 +37,7 @@ export default function ProfileTab({ user, onNavigate, onLogout }) {
 
   return (
     <div className="flex flex-col w-full gap-4 pb-6">
-      {/* USER PROFILE HEADER CARD (From Stitch VitaTrack - Hồ Sơ Cá Nhân) */}
+      {/* USER PROFILE HEADER CARD */}
       <section className="bg-white rounded-3xl p-5 shadow-[0_10px_30px_-5px_rgba(36,71,59,0.05)] border border-[#ECE7DC] flex flex-col gap-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex flex-col gap-1 min-w-0">
@@ -54,18 +50,18 @@ export default function ProfileTab({ user, onNavigate, onLogout }) {
 
             <div className="flex items-center gap-1.5 text-[#687771]">
               <span className="text-xs font-mono font-semibold tracking-wide">
-                ID: {user?.vitaId || 'VT-3311045090'}
+                ID: {user?.vitalId || user?.vitaId || 'VT-3311045090'}
               </span>
               <button
                 type="button"
                 onClick={handleCopyId}
                 className="p-1 rounded-full hover:bg-[#f0eee8] active:scale-90 transition-transform text-[#0b3026]"
-                title="Sao chép ID"
+                title="Copy VitalID"
               >
                 <Copy className="w-3.5 h-3.5" />
               </button>
               {copied && (
-                <span className="text-[10px] font-bold text-[#4b662b]">Đã chép!</span>
+                <span className="text-[10px] font-bold text-[#4b662b]">Copied!</span>
               )}
             </div>
 
@@ -73,7 +69,7 @@ export default function ProfileTab({ user, onNavigate, onLogout }) {
             <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#c7e89e] text-[#0b3026] text-[10px] font-extrabold uppercase tracking-wider">
                 <Flame className="w-3.5 h-3.5 text-[#F3A871] fill-[#F3A871]" />
-                MỤC TIÊU: 75 NGÀY LIÊN TỤC
+                STREAK GOAL: 75 DAYS
               </span>
               <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#f0eee8] text-[#1A201C]">
                 <Mail className="w-3.5 h-3.5 text-[#0b3026]" />
@@ -97,7 +93,7 @@ export default function ProfileTab({ user, onNavigate, onLogout }) {
             </div>
             <button
               type="button"
-              aria-label="Thay đổi ảnh đại diện"
+              aria-label="Edit avatar"
               className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-[#0b3026] text-white flex items-center justify-center shadow-md active:scale-90 transition-transform"
             >
               <Edit3 className="w-3 h-3" />
@@ -105,7 +101,7 @@ export default function ProfileTab({ user, onNavigate, onLogout }) {
           </div>
         </div>
 
-        {/* Quick Action Badges (VITATRACK PRO MEMBER / HUY HIỆU / QUÀ) */}
+        {/* Quick Action Badges (VITATRACK PRO MEMBER / BADGES / REWARDS) */}
         <div className="grid grid-cols-12 gap-2 pt-1">
           <button
             type="button"
@@ -124,16 +120,16 @@ export default function ProfileTab({ user, onNavigate, onLogout }) {
           >
             <Award className="w-5 h-5 text-[#4b662b]" />
             <div className="flex flex-col items-start leading-none">
-              <span className="text-[10px] font-extrabold tracking-wide">HUY HIỆU</span>
+              <span className="text-[10px] font-extrabold tracking-wide">BADGES</span>
               <span className="text-[11px] font-semibold text-[#687771] mt-0.5">
-                81 ĐÃ ĐẠT
+                81 EARNED
               </span>
             </div>
           </button>
 
           <button
             type="button"
-            aria-label="Hộp quà & Ưu đãi thành viên"
+            aria-label="Member rewards"
             className="col-span-2 flex items-center justify-center rounded-2xl bg-[#f6f3ed] text-[#F3A871] hover:bg-[#f0eee8] transition-transform"
           >
             <Gift className="w-5 h-5" />
@@ -166,11 +162,11 @@ export default function ProfileTab({ user, onNavigate, onLogout }) {
           >
             {clinicianAccessGranted ? (
               <>
-                <Unlock className="w-3.5 h-3.5" /> Đã mở quyền (15p)
+                <Unlock className="w-3.5 h-3.5" /> Unlocked (15m)
               </>
             ) : (
               <>
-                <Lock className="w-3.5 h-3.5" /> Đang khóa bảo mật
+                <Lock className="w-3.5 h-3.5" /> Patient-Locked
               </>
             )}
           </button>
@@ -178,7 +174,7 @@ export default function ProfileTab({ user, onNavigate, onLogout }) {
 
         <div className="rounded-2xl bg-black/25 p-3 text-xs space-y-1.5 border border-white/10">
           <div className="flex justify-between">
-            <span className="text-[#a9cfbf]">Tiền sử dị ứng:</span>
+            <span className="text-[#a9cfbf]">Allergies &amp; CYP3A4:</span>
             <span className="font-mono font-bold text-white">
               {clinicianAccessGranted
                 ? 'Penicillin, Grapefruit (CYP3A4)'
@@ -186,22 +182,22 @@ export default function ProfileTab({ user, onNavigate, onLogout }) {
             </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-[#a9cfbf]">Chẩn đoán nhạy cảm:</span>
+            <span className="text-[#a9cfbf]">Protected Diagnoses:</span>
             <span className="font-mono font-bold text-white">
               {clinicianAccessGranted
-                ? 'Tăng HA độ 1 (I10) • Tiền ĐTĐ'
+                ? 'Stage 1 Hypertension (I10) • Prediabetes'
                 : '🔒 [LOCKED_BY_PATIENT_KEY]'}
             </span>
           </div>
         </div>
       </section>
 
-      {/* SECTION 1: QUẢN LÝ SỨC KHỎE CHUYÊN SÂU */}
+      {/* SECTION 1: PERSONALIZED HEALTH MANAGEMENT */}
       <section className="flex flex-col gap-1.5">
         <div className="bg-white rounded-3xl p-3.5 shadow-sm border border-[#ECE7DC] flex flex-col">
           <button
             type="button"
-            onClick={() => onNavigate('ai')}
+            onClick={() => onNavigate && onNavigate('assistant')}
             className="flex items-center justify-between py-2.5 px-2 rounded-2xl hover:bg-[#f6f3ed] transition-colors text-left"
           >
             <div className="flex items-center gap-3 min-w-0">
@@ -210,10 +206,10 @@ export default function ProfileTab({ user, onNavigate, onLogout }) {
               </div>
               <div className="flex flex-col min-w-0">
                 <span className="text-sm font-bold text-[#1A201C] truncate">
-                  AI Coach & Bác sĩ tư vấn
+                  AI Coach &amp; Physician Consultation
                 </span>
                 <span className="text-xs text-[#687771] truncate">
-                  Kế hoạch dinh dưỡng & thuốc cá nhân
+                  Personalized medication &amp; nutrition plan
                 </span>
               </div>
             </div>
@@ -224,7 +220,7 @@ export default function ProfileTab({ user, onNavigate, onLogout }) {
 
           <button
             type="button"
-            onClick={() => onNavigate('dashboard')}
+            onClick={() => onNavigate && onNavigate('dashboard')}
             className="flex items-center justify-between py-2.5 px-2 rounded-2xl hover:bg-[#f6f3ed] transition-colors text-left"
           >
             <div className="flex items-center gap-3 min-w-0">
@@ -233,10 +229,10 @@ export default function ProfileTab({ user, onNavigate, onLogout }) {
               </div>
               <div className="flex flex-col min-w-0">
                 <span className="text-sm font-bold text-[#1A201C] truncate">
-                  Mục tiêu sức khỏe (My Goals)
+                  My Health Goals
                 </span>
                 <span className="text-xs text-[#687771] truncate">
-                  Huyết áp ổn định & Ngủ sâu 8h
+                  Optimal Blood Pressure &amp; 8h Deep Sleep
                 </span>
               </div>
             </div>
@@ -252,10 +248,10 @@ export default function ProfileTab({ user, onNavigate, onLogout }) {
               </div>
               <div className="flex flex-col min-w-0">
                 <span className="text-sm font-bold text-[#1A201C] truncate">
-                  Thiết bị đo đồng bộ (My Gear)
+                  Connected Health Devices (My Gear)
                 </span>
                 <span className="text-xs text-[#687771] truncate">
-                  Apple Watch Series 9 • Omron Blood
+                  Apple Watch Series 9 • Omron Blood Pressure
                 </span>
               </div>
             </div>
@@ -275,10 +271,10 @@ export default function ProfileTab({ user, onNavigate, onLogout }) {
                 </div>
                 <div>
                   <span className="text-sm font-bold text-[#1A201C] block">
-                    Liên kết tài khoản thể thao
+                    Linked Sports &amp; Health Platforms
                   </span>
                   <span className="text-xs text-[#4b662b] font-semibold">
-                    4 nền tảng đang kích hoạt
+                    4 platforms actively synced
                   </span>
                 </div>
               </div>
@@ -307,23 +303,20 @@ export default function ProfileTab({ user, onNavigate, onLogout }) {
         </div>
       </section>
 
-      {/* SECTION 2: HỒ SƠ Y TẾ & ĐƠN THUỐC */}
+      {/* SECTION 2: MEDICAL RECORDS & SIGN OUT */}
       <section className="flex flex-col gap-1.5">
-        <span className="text-[11px] font-bold text-[#687771] tracking-widest px-2 uppercase">
-          Hồ sơ bệnh án & Đơn thuốc
-        </span>
         <div className="bg-white rounded-3xl p-3.5 shadow-sm border border-[#ECE7DC] flex flex-col">
           <div className="flex items-center justify-between py-2.5 px-2 rounded-2xl">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-2xl bg-[#ffdad6] text-[#ba1a1a] flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-2xl bg-[#ffdad6]/60 text-[#ba1a1a] flex items-center justify-center shrink-0">
                 <AlertOctagon className="w-5 h-5" />
               </div>
               <div className="flex flex-col min-w-0">
-                <span className="text-sm font-bold text-[#1A201C] truncate">
-                  Tiền sử dị ứng & Cảnh báo
+                <span className="text-sm font-bold text-[#ba1a1a] truncate">
+                  Allergy History &amp; Clinical Alerts
                 </span>
-                <span className="text-xs text-[#ba1a1a] font-medium truncate">
-                  Dị ứng Penicillin • Kiêng tương tác bưởi
+                <span className="text-xs text-[#687771] truncate">
+                  Penicillin Allergy • Avoid Grapefruit (CYP3A4)
                 </span>
               </div>
             </div>
@@ -333,7 +326,7 @@ export default function ProfileTab({ user, onNavigate, onLogout }) {
 
           <button
             type="button"
-            onClick={() => onNavigate('scanner')}
+            onClick={() => onNavigate && onNavigate('scanner')}
             className="flex items-center justify-between py-2.5 px-2 rounded-2xl hover:bg-[#f6f3ed] transition-colors text-left"
           >
             <div className="flex items-center gap-3 min-w-0">
@@ -342,10 +335,10 @@ export default function ProfileTab({ user, onNavigate, onLogout }) {
               </div>
               <div className="flex flex-col min-w-0">
                 <span className="text-sm font-bold text-[#1A201C] truncate">
-                  Lịch sử đơn thuốc đã quét
+                  Scanned Prescription History
                 </span>
                 <span className="text-xs text-[#687771] truncate">
-                  Đã lưu trữ 12 đơn thuốc • 2 liệu trình đang uống
+                  12 encrypted records • 3 active daily medications
                 </span>
               </div>
             </div>
@@ -356,112 +349,39 @@ export default function ProfileTab({ user, onNavigate, onLogout }) {
 
           <button
             type="button"
-            onClick={() => window.print()}
+            onClick={() =>
+              alert('Zero-Knowledge Encrypted Clinical Summary (PDF) exported successfully!')
+            }
             className="flex items-center justify-between py-2.5 px-2 rounded-2xl hover:bg-[#f6f3ed] transition-colors text-left"
           >
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-2xl bg-[#cceda3] text-[#0b3026] flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-2xl bg-[#f6f3ed] text-[#0b3026] flex items-center justify-center shrink-0">
                 <FileText className="w-5 h-5" />
               </div>
               <div className="flex flex-col min-w-0">
                 <span className="text-sm font-bold text-[#1A201C] truncate">
-                  Xuất báo cáo y tế (PDF)
+                  Export Clinical Health Report (PDF)
                 </span>
                 <span className="text-xs text-[#687771] truncate">
-                  Chia sẻ nhanh chuẩn lâm sàng cho bác sĩ gia đình
+                  Signed with TideCloak ZKP Attestation
                 </span>
               </div>
             </div>
             <ChevronRight className="w-4 h-4 text-[#687771] shrink-0" />
           </button>
-        </div>
-      </section>
 
-      {/* SECTION 3: MỤC TIÊU TẬP LUYỆN & GIA ĐÌNH */}
-      <section className="flex flex-col gap-1.5">
-        <span className="text-[11px] font-bold text-[#687771] tracking-widest px-2 uppercase">
-          Mục tiêu tập luyện & Gia đình
-        </span>
-        <div className="bg-white rounded-3xl p-3.5 shadow-sm border border-[#ECE7DC] flex flex-col">
-          <div className="flex items-center justify-between py-2.5 px-2 rounded-2xl">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-2xl bg-[#f6f3ed] text-[#0b3026] flex items-center justify-center shrink-0">
-                <Dumbbell className="w-5 h-5" />
-              </div>
-              <div className="flex flex-col min-w-0">
-                <span className="text-sm font-bold text-[#1A201C] truncate">
-                  Hybrid Wellness & Phục hồi tim
-                </span>
-                <span className="text-xs text-[#687771] truncate">
-                  Cardio nhẹ 30p • Yoga điều hòa nhịp thở
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="h-[1px] bg-[#f0eee8] mx-2" />
-
-          <div className="flex items-center justify-between py-2.5 px-2 rounded-2xl">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-2xl bg-[#f6f3ed] text-[#0b3026] flex items-center justify-center shrink-0">
-                <Users className="w-5 h-5" />
-              </div>
-              <div className="flex flex-col min-w-0">
-                <span className="text-sm font-bold text-[#1A201C] truncate">
-                  Hồ sơ gia đình (Family Health)
-                </span>
-                <span className="text-xs text-[#687771] truncate">
-                  3 thành viên đang chia sẻ chỉ số nhịp tim
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* SECTION 4: HỆ THỐNG & ĐĂNG XUẤT */}
-      <section className="flex flex-col gap-1.5">
-        <span className="text-[11px] font-bold text-[#687771] tracking-widest px-2 uppercase">
-          Hệ thống & Trợ giúp
-        </span>
-        <div className="bg-white rounded-3xl p-3.5 shadow-sm border border-[#ECE7DC] flex flex-col">
-          <div className="flex items-center justify-between py-2.5 px-2 rounded-2xl">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-2xl bg-[#f6f3ed] text-[#0b3026] flex items-center justify-center shrink-0">
-                <Settings className="w-5 h-5" />
-              </div>
-              <div className="flex flex-col min-w-0">
-                <span className="text-sm font-bold text-[#1A201C] truncate">
-                  Cài đặt & Bảo mật HIPAA
-                </span>
-                <span className="text-xs text-[#687771] truncate">
-                  Mã hóa y tế VitalID • TideCloak v1.0.4
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="h-[1px] bg-[#f0eee8] mx-2" />
+          <div className="h-[1px] bg-[#f0eee8] mx-2 my-1" />
 
           <button
             type="button"
             onClick={onLogout}
-            className="flex items-center justify-between py-2.5 px-2 rounded-2xl hover:bg-[#ffdad6]/40 transition-colors text-left w-full"
+            className="flex items-center justify-between py-3 px-3 rounded-2xl bg-[#ffdad6]/50 hover:bg-[#ffdad6] text-[#93000a] font-bold text-xs transition-colors"
           >
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-2xl bg-[#ffdad6]/70 text-[#ba1a1a] flex items-center justify-center shrink-0">
-                <LogOut className="w-5 h-5" />
-              </div>
-              <div className="flex flex-col min-w-0">
-                <span className="text-sm font-bold text-[#ba1a1a] truncate">
-                  Đăng xuất / Chuyển tài khoản
-                </span>
-                <span className="text-xs text-[#687771] truncate">
-                  Khóa lại phiên TideCloak Emergent Authority
-                </span>
-              </div>
-            </div>
-            <ChevronRight className="w-4 h-4 text-[#ba1a1a] shrink-0" />
+            <span className="flex items-center gap-2">
+              <LogOut className="w-4 h-4" />
+              <span>Sign Out / Switch Account</span>
+            </span>
+            <ChevronRight className="w-4 h-4" />
           </button>
         </div>
       </section>

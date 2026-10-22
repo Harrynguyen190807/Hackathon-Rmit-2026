@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShieldCheck, Lock, EyeOff, KeyRound, CheckCircle2, ChevronRight, X, Cpu } from 'lucide-react';
+import { ShieldCheck, EyeOff, KeyRound, CheckCircle2, ChevronRight, X, Cpu } from 'lucide-react';
 
 export default function TideCloakBadge({ proofData, contextLabel = 'Zero-Trust Edge Encryption' }) {
   const [showInspector, setShowInspector] = useState(false);
@@ -51,7 +51,7 @@ export default function TideCloakBadge({ proofData, contextLabel = 'Zero-Trust E
                 <ShieldCheck className="w-5 h-5 text-[#cceda3]" />
                 <div>
                   <h3 className="text-sm font-bold">TideCloak Zero-Trust Inspector</h3>
-                  <p className="text-[11px] text-[#a9cfbf]">Client-Side Edge Encryption & ZKP Log</p>
+                  <p className="text-[11px] text-[#a9cfbf]">Client-Side Edge Encryption &amp; ZKP Log</p>
                 </div>
               </div>
               <button
@@ -74,7 +74,7 @@ export default function TideCloakBadge({ proofData, contextLabel = 'Zero-Trust E
                   </span>
                 </div>
                 <p className="text-[11px] text-[#687771]">
-                  Dữ liệu bệnh án, đơn thuốc và chỉ số sinh trắc học được mã hóa ngay tại trình duyệt (Client Edge) trước khi gửi tới AI.
+                  Medical records, prescription OCR outputs, and biometric telemetry are encrypted directly at the client edge before reaching external AI models.
                 </p>
               </div>
 
@@ -126,7 +126,7 @@ export default function TideCloakBadge({ proofData, contextLabel = 'Zero-Trust E
                     proofData?.sanitizedForAI || {
                       zkSessionDid: 'did:tide:zk:0x9f8c...3e1b44a0',
                       patientIdentity: '[REDACTED_BY_TIDECLOAK_EDGE]',
-                      clinicalTokens: ['Amlodipine 5mg', 'Metformin 500mg', 'Atorvastatin 10mg'],
+                      clinicalTokens: ['Amlor 5mg', 'Glucophage 500mg', 'Lipitor 10mg'],
                     },
                     null,
                     2
@@ -138,7 +138,7 @@ export default function TideCloakBadge({ proofData, contextLabel = 'Zero-Trust E
                 onClick={() => setShowInspector(false)}
                 className="w-full py-2.5 rounded-full bg-[#24473b] text-white font-bold text-xs shadow-md hover:bg-[#0b3026] transition-colors"
               >
-                Đóng bảng kiểm chứng bảo mật
+                Close Security Attestation
               </button>
             </div>
           </div>

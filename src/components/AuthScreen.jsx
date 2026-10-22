@@ -25,7 +25,7 @@ export default function AuthScreen({ onLoginSuccess, onBackToWelcome, initialMod
         badgesCount: 81,
         isPro: true,
       });
-    }, 550);
+    }, 450);
   };
 
   return (
@@ -86,8 +86,8 @@ export default function AuthScreen({ onLoginSuccess, onBackToWelcome, initialMod
         </h1>
         <p className="text-xs text-[#687C74] font-medium tracking-wide">
           {mode === 'signin'
-            ? 'Hồ sơ sức khỏe & Đơn thuốc cá nhân'
-            : 'Khởi tạo Hộ chiếu Sức khỏe Bảo mật TideCloak'}
+            ? 'Personal Health Records & Prescriptions'
+            : 'Initialize Sovereign TideCloak Health Passport'}
         </p>
       </section>
 
@@ -124,7 +124,7 @@ export default function AuthScreen({ onLoginSuccess, onBackToWelcome, initialMod
               className="w-full bg-transparent p-0 border-0 focus:ring-0 text-[#1B2F27] font-semibold text-[15px] tracking-wide outline-none"
               required
             />
-            <div className="text-[#24473B]/50 pr-0.5" title="Đã đồng bộ VitaID">
+            <div className="text-[#24473B]/50 pr-0.5" title="VitaID Synced">
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                 <path
                   clipRule="evenodd"
@@ -138,7 +138,7 @@ export default function AuthScreen({ onLoginSuccess, onBackToWelcome, initialMod
           {mode === 'signup' && (
             <div className="relative bg-white border-[1.5px] border-[#E5E0D4] focus-within:border-[#24473B] rounded-[20px] px-4 py-3 flex items-center justify-between transition-all shadow-sm">
               <span className="absolute -top-[9px] left-[18px] px-1.5 bg-white text-[11px] font-semibold text-[#7A8983] rounded">
-                Email
+                Clinical Email
               </span>
               <input
                 type="email"
@@ -176,7 +176,7 @@ export default function AuthScreen({ onLoginSuccess, onBackToWelcome, initialMod
             {mode === 'signin' && (
               <button
                 type="button"
-                onClick={() => alert('Khóa khôi phục Zero-Knowledge đã được gửi tới thiết bị đã xác thực của bạn.')}
+                onClick={() => alert('Zero-Knowledge recovery key sent to your verified device.')}
                 className="text-xs font-semibold text-[#667E74] hover:text-[#24473B] transition-colors whitespace-nowrap pl-1"
               >
                 Forgot password?
@@ -195,8 +195,8 @@ export default function AuthScreen({ onLoginSuccess, onBackToWelcome, initialMod
               />
               <span className="text-xs font-medium text-[#5F736B]">
                 {mode === 'signin'
-                  ? 'Ghi nhớ đăng nhập'
-                  : 'Kích hoạt khóa cá nhân TideCloak Emergent Authority'}
+                  ? 'Remember me on this device'
+                  : 'Activate TideCloak Emergent Authority Key'}
               </span>
             </label>
           </div>
@@ -247,7 +247,7 @@ export default function AuthScreen({ onLoginSuccess, onBackToWelcome, initialMod
           <button
             type="button"
             onClick={handleSubmit}
-            aria-label="Đăng nhập bằng Facebook"
+            aria-label="Sign in with Facebook"
             className="h-12 flex items-center justify-center rounded-full bg-white border border-[#DDD6C8] hover:border-[#24473B]/40 hover:bg-[#FAF7F1] shadow-sm active:scale-95 transition-all duration-150"
           >
             <svg className="w-5 h-5 text-[#1877F2] fill-current" viewBox="0 0 24 24">
@@ -259,7 +259,7 @@ export default function AuthScreen({ onLoginSuccess, onBackToWelcome, initialMod
           <button
             type="button"
             onClick={handleSubmit}
-            aria-label="Đăng nhập bằng Google"
+            aria-label="Sign in with Google"
             className="h-12 flex items-center justify-center rounded-full bg-white border border-[#DDD6C8] hover:border-[#24473B]/40 hover:bg-[#FAF7F1] shadow-sm active:scale-95 transition-all duration-150"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -288,7 +288,7 @@ export default function AuthScreen({ onLoginSuccess, onBackToWelcome, initialMod
       <footer className="mt-2 text-center">
         <div className="inline-flex items-center space-x-1.5 text-[10.5px] font-semibold text-[#5A6F66] bg-[#ECE6D9]/60 px-3 py-1 rounded-full">
           <ShieldCheck className="w-3.5 h-3.5 text-[#24473B]" />
-          <span>Bảo mật y tế mã hóa HIPAA • VitaID</span>
+          <span>HIPAA Encrypted Medical Security • VitaID</span>
         </div>
       </footer>
     </div>

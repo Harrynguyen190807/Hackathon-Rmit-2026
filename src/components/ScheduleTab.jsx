@@ -27,52 +27,107 @@ const SLEEP_LOGS = [
     id: 'log-17',
     month: 'Oct',
     day: '17',
-    title: 'Ngủ 5.2 giờ • Nhịp tim 72 bpm',
+    title: '5.2h Sleep • Heart Rate 72 bpm',
     progress: 65,
     barColor: 'bg-[#4b662b]',
     badge: 'Low Rest',
     badgeClass: 'bg-[#c7e89e] text-[#0b3026]',
-    note: 'Đã uống đủ 3 cữ thuốc',
+    note: 'All 3 daily doses completed',
   },
   {
     id: 'log-16',
     month: 'Oct',
     day: '16',
-    title: 'Ngủ 8.2 giờ • Huyết áp 118/76',
+    title: '8.2h Sleep • Blood Pressure 118/76',
     progress: 92,
     barColor: 'bg-[#F3A871]',
     badge: 'Deep REM',
     badgeClass: 'bg-[#ffdcc5] text-[#6d390a]',
-    note: '8 gợi ý dinh dưỡng AI',
+    note: '8 AI dietary insights applied',
   },
   {
     id: 'log-15',
     month: 'Oct',
     day: '15',
-    title: 'Ngủ 6.0 giờ • Đi bộ 6,400 bước',
+    title: '6.0h Sleep • 6,400 Steps Walked',
     progress: 75,
     barColor: 'bg-[#0b3026]',
     badge: 'Balanced',
     badgeClass: 'bg-[#31312d] text-[#f3f0ea]',
-    note: 'Tuân thủ 100% phác đồ',
+    note: '100% regimen adherence',
   },
 ];
 
-export default function ScheduleTab({ scheduleItems, onToggleDose }) {
-  const [selectedDate, setSelectedDate] = useState(20);
+const DEFAULT_SCHEDULE = [
+  {
+    id: 'sched-1',
+    time: '08:00',
+    period: 'MORNING',
+    name: 'Amlor',
+    active_ingredient: 'Amlodipine Besylate',
+    dosage: '5mg',
+    meal_relation: 'AFTER_MEAL',
+    instruction: 'Take 1 tablet after breakfast with 250ml water',
+    category: 'Antihypertensive',
+    taken: true,
+  },
+  {
+    id: 'sched-2',
+    time: '19:00',
+    period: 'EVENING',
+    name: 'Glucophage',
+    active_ingredient: 'Metformin HCl',
+    dosage: '500mg',
+    meal_relation: 'WITH_MEAL',
+    instruction: 'Take 1 tablet with dinner',
+    category: 'Glycemic Control',
+    taken: true,
+  },
+  {
+    id: 'sched-3',
+    time: '21:30',
+    period: 'BEDTIME',
+    name: 'Lipitor',
+    active_ingredient: 'Atorvastatin Calcium',
+    dosage: '10mg',
+    meal_relation: 'BEFORE_BEDTIME',
+    instruction: 'Take 1 tablet before going to sleep',
+    category: 'Lipid-Lowering (Statin)',
+    taken: false,
+  },
+];
 
-  const completedCount = scheduleItems.filter((item) => item.taken).length;
-  const adherenceRate = Math.round((completedCount / scheduleItems.length) * 100);
+export default function ScheduleTab({
+  scheduleItems = DEFAULT_SCHEDULE,
+  onToggleDose,
+}) {
+  const [selectedDate, setSelectedDate] = useState(20);
+  const [localItems, setLocalItems] = useState(DEFAULT_SCHEDULE);
+
+  const items = scheduleItems && scheduleItems.length > 0 ? scheduleItems : localItems;
+
+  const handleToggle = (id) => {
+    if (typeof onToggleDose === 'function') {
+      onToggleDose(id);
+    } else {
+      setLocalItems((prev) =>
+        prev.map((item) => (item.id === id ? { ...item.taken, ...item, taken: !item.taken } : item))
+      );
+    }
+  };
+
+  const completedCount = items.filter((item) => item.taken).length;
+  const adherenceRate = Math.round((completedCount / items.length) * 100);
 
   return (
     <div className="flex flex-col w-full pb-6 space-y-4">
-      {/* Calendar Month & Interactive Date Strip (From Stitch Lịch & Xu Hướng) */}
+      {/* Calendar Month & Interactive Date Strip */}
       <div className="bg-white rounded-3xl p-4 shadow-[0_10px_30px_-5px_rgba(36,71,59,0.05)] border border-[#ECE7DC]">
         <div className="flex items-center justify-between mb-3.5">
           <div className="flex items-center gap-2">
             <CalendarIcon className="w-4 h-4 text-[#0b3026]" />
             <span className="text-base font-bold text-[#1A201C]">
-              Tháng 10, 2026
+              October 2026
             </span>
           </div>
           <div className="flex items-center bg-[#F5EFE4] rounded-full p-0.5">
@@ -137,27 +192,27 @@ export default function ScheduleTab({ scheduleItems, onToggleDose }) {
             </div>
             <div>
               <span className="text-sm font-bold text-[#1A201C] block">
-                Lịch nhắc uống thuốc hôm nay
+                Today&apos;s Medication Reminders
               </span>
               <span className="text-[11px] text-[#687771]">
-                Chạm vào từng khung giờ để đánh dấu đã uống
+                Tap any time slot to mark dose as taken
               </span>
             </div>
           </div>
           <span className="px-2.5 py-1 rounded-full bg-[#cceda3] text-[#0b3026] text-xs font-extrabold">
-            {adherenceRate}% tuân thủ
+            {adherenceRate}% Adherence
           </span>
         </div>
 
-        {/* Time Slot Reminder Cards: 08:00, 19:00, 21:30 */}
+        {/* Time Slot Reminder Cards */}
         <div className="space-y-2.5 pt-1">
-          {scheduleItems.map((slot) => (
+          {items.map((slot) => (
             <div
               key={slot.id}
-              onClick={() => onToggleDose(slot.id)}
+              onClick={() => handleToggle(slot.id)}
               role="button"
               tabIndex={0}
-              onKeyDown={(e) => e.key === 'Enter' && onToggleDose(slot.id)}
+              onKeyDown={(e) => e.key === 'Enter' && handleToggle(slot.id)}
               className={`rounded-2xl p-3.5 border transition-all cursor-pointer flex items-center justify-between gap-3 ${
                 slot.taken
                   ? 'bg-[#f6f3ed] border-[#c7e89e] shadow-sm'
@@ -175,7 +230,7 @@ export default function ScheduleTab({ scheduleItems, onToggleDose }) {
                 >
                   <span className="text-sm leading-none">{slot.time}</span>
                   <span className="text-[9px] uppercase tracking-wider mt-0.5 opacity-85">
-                    {slot.period}
+                    {slot.period || 'DAILY'}
                   </span>
                 </div>
 
@@ -188,11 +243,11 @@ export default function ScheduleTab({ scheduleItems, onToggleDose }) {
                         slot.taken ? 'line-through text-[#687771]' : 'text-[#1A201C]'
                       }`}
                     >
-                      {slot.name} • {slot.dosage}
+                      {slot.brand_name || slot.name} • {slot.dosage}
                     </span>
                   </div>
                   <p className="text-xs text-[#687771] truncate mt-0.5">
-                    {slot.instruction} ({slot.category})
+                    {slot.instruction} ({slot.meal_relation || 'AFTER_MEAL'})
                   </p>
                 </div>
               </div>
@@ -202,12 +257,12 @@ export default function ScheduleTab({ scheduleItems, onToggleDose }) {
                 {slot.taken ? (
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#c7e89e] text-[#0b3026] text-xs font-bold">
                     <CheckCircle2 className="w-3.5 h-3.5" />
-                    Đã uống
+                    Taken
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#ffdcc5] text-[#663304] text-xs font-bold">
                     <Clock className="w-3.5 h-3.5" />
-                    Chờ uống
+                    Scheduled
                   </span>
                 )}
               </div>
@@ -216,11 +271,11 @@ export default function ScheduleTab({ scheduleItems, onToggleDose }) {
         </div>
       </div>
 
-      {/* Sleep Overview Hero Card (From Stitch Lịch & Xu Hướng) */}
+      {/* Sleep Overview Hero Card */}
       <div className="flex flex-col space-y-2.5">
         <div className="flex items-center justify-between px-1">
           <h2 className="text-base font-bold text-[#1A201C]">Sleep Overview</h2>
-          <span className="text-xs text-[#687771]">Tuần này</span>
+          <span className="text-xs text-[#687771]">This Week</span>
         </div>
 
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#D5EDAF] to-[#E9F6D6] p-4 shadow-[0_12px_28px_-6px_rgba(75,102,43,0.12)] flex items-center justify-between">
@@ -232,10 +287,10 @@ export default function ScheduleTab({ scheduleItems, onToggleDose }) {
               <div className="flex items-baseline gap-1.5">
                 <span className="text-2xl font-extrabold text-[#0b3026]">8.2h</span>
                 <span className="w-2 h-2 rounded-full bg-[#4b662b] animate-pulse" />
-                <span className="text-xs font-bold text-[#0b3026]">Trung bình/đêm</span>
+                <span className="text-xs font-bold text-[#0b3026]">Avg / Night</span>
               </div>
               <span className="text-xs text-[#0b3026]/80 font-medium mt-0.5">
-                Nhịp sinh học ổn định sau khi duy trì thuốc đúng giờ
+                Circadian rhythm stabilized with on-time evening doses
               </span>
             </div>
           </div>
@@ -249,11 +304,11 @@ export default function ScheduleTab({ scheduleItems, onToggleDose }) {
         </div>
       </div>
 
-      {/* Disease Risks / Health Journal Stack (From Stitch Lịch & Xu Hướng) */}
+      {/* Health Journal Stack */}
       <div className="flex flex-col space-y-2.5">
         <div className="flex items-center justify-between px-1">
           <div className="flex items-baseline gap-2">
-            <h2 className="text-base font-bold text-[#1A201C]">Nhật ký Sức khỏe</h2>
+            <h2 className="text-base font-bold text-[#1A201C]">Health Journal</h2>
             <span className="text-[11px] font-bold uppercase text-[#687771]">
               / Encrypted Logs
             </span>

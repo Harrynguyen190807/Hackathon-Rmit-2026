@@ -14,13 +14,21 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import TideCloakBadge from './TideCloakBadge';
+import { SYNTHETIC_PATIENT_VAULT } from '../services/tidecloak';
 
-export default function DashboardTab({ biometrics, edgeProof, onNavigate }) {
+export default function DashboardTab({
+  biometrics = SYNTHETIC_PATIENT_VAULT.biometrics,
+  edgeProof,
+  onNavigate,
+}) {
   return (
     <div className="flex flex-col w-full gap-y-4 pb-6">
       {/* Top Greeting & Profile Bar (From Stitch Dashboard) */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <div
+          className="flex items-center gap-3 cursor-pointer"
+          onClick={() => onNavigate && onNavigate('profile')}
+        >
           <div className="relative">
             <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-[#24473b] to-[#8fb5a5] p-0.5 shadow-sm">
               <div className="w-full h-full rounded-full bg-[#F5EFE4] flex items-center justify-center text-[#0b3026] font-extrabold text-base">
@@ -50,7 +58,7 @@ export default function DashboardTab({ biometrics, edgeProof, onNavigate }) {
 
         <button
           aria-label="Settings options"
-          onClick={() => onNavigate('schedule')}
+          onClick={() => onNavigate && onNavigate('schedule')}
           className="w-11 h-11 rounded-2xl bg-white shadow-[0_4px_16px_-2px_rgba(36,71,59,0.06)] flex items-center justify-center text-[#1A201C] hover:bg-[#f6f3ed] active:scale-95 transition-all"
         >
           <MoreHorizontal className="w-5 h-5" />
@@ -71,14 +79,14 @@ export default function DashboardTab({ biometrics, edgeProof, onNavigate }) {
             <input
               type="text"
               readOnly
-              onClick={() => onNavigate('ai')}
-              placeholder="Hỏi AI bảo mật về đơn thuốc, chỉ số..."
+              onClick={() => onNavigate && onNavigate('assistant')}
+              placeholder="Ask AI Physician about prescriptions, vitals..."
               className="bg-transparent border-0 outline-none w-full text-sm text-[#1A201C] placeholder:text-[#687771] cursor-pointer"
             />
           </div>
           <button
             aria-label="Filter"
-            onClick={() => onNavigate('ai')}
+            onClick={() => onNavigate && onNavigate('assistant')}
             className="w-7 h-7 rounded-full bg-white flex items-center justify-center text-[#0b3026] shadow-sm active:scale-95 transition-transform"
           >
             <SlidersHorizontal className="w-3.5 h-3.5" />
@@ -89,18 +97,18 @@ export default function DashboardTab({ biometrics, edgeProof, onNavigate }) {
       {/* Quick Action Interactive Pills (Stitch Design) */}
       <div className="grid grid-cols-2 gap-2.5">
         <button
-          onClick={() => onNavigate('scanner')}
+          onClick={() => onNavigate && onNavigate('scanner')}
           className="flex items-center justify-center gap-2 py-3 px-3 rounded-2xl bg-[#0b3026] text-white shadow-[0_6px_20px_-4px_rgba(11,48,38,0.22)] active:scale-[0.98] transition-all"
         >
           <ScanLine className="w-4 h-4 text-[#cceda3]" />
-          <span className="text-sm font-semibold tracking-tight">Quét Đơn Thuốc</span>
+          <span className="text-sm font-semibold tracking-tight">Scan Prescription</span>
         </button>
         <button
-          onClick={() => onNavigate('ai')}
+          onClick={() => onNavigate && onNavigate('assistant')}
           className="flex items-center justify-center gap-2 py-3 px-3 rounded-2xl bg-[#cceda3] text-[#0b3026] shadow-[0_6px_20px_-4px_rgba(204,237,163,0.4)] active:scale-[0.98] transition-all"
         >
           <Sparkles className="w-4 h-4 text-[#0b3026]" />
-          <span className="text-sm font-semibold tracking-tight">Hỏi Bác Sĩ AI</span>
+          <span className="text-sm font-semibold tracking-tight">Ask AI Physician</span>
         </button>
       </div>
 
@@ -111,7 +119,7 @@ export default function DashboardTab({ biometrics, edgeProof, onNavigate }) {
             Health Score
           </span>
           <span className="text-xs font-semibold text-[#4b662b] flex items-center gap-1">
-            <TrendingUp className="w-3.5 h-3.5" /> +4 pts tuần này
+            <TrendingUp className="w-3.5 h-3.5" /> +4 pts this week
           </span>
         </div>
 
@@ -122,7 +130,7 @@ export default function DashboardTab({ biometrics, edgeProof, onNavigate }) {
               Asclepios Score
             </span>
             <p className="text-xs text-[#687771] mt-1 leading-relaxed">
-              Dựa trên sinh trắc học mỗi ngày, chỉ số tim mạch và giấc ngủ của bạn đạt mức tối ưu.
+              Based on your continuous daily biometrics, your cardiovascular stability and sleep recovery are optimal.
             </p>
             <div className="mt-3 inline-flex items-center gap-1.5 self-start px-2.5 py-1 rounded-full bg-[#f6f3ed] text-[#0b3026]">
               <span className="w-2 h-2 rounded-full bg-[#4b662b]" />
@@ -152,10 +160,10 @@ export default function DashboardTab({ biometrics, edgeProof, onNavigate }) {
             Smart Health Metrics
           </span>
           <button
-            onClick={() => onNavigate('schedule')}
+            onClick={() => onNavigate && onNavigate('schedule')}
             className="text-xs text-[#687771] hover:text-[#0b3026] font-semibold transition-colors"
           >
-            Xem lịch sử
+            View History
           </button>
         </div>
 
@@ -172,8 +180,8 @@ export default function DashboardTab({ biometrics, edgeProof, onNavigate }) {
             </div>
 
             <div className="mt-2.5">
-              <span className="text-sm font-bold text-[#1A201C]">Nhịp tim</span>
-              <p className="text-[11px] text-[#687771]">ECG Liên tục</p>
+              <span className="text-sm font-bold text-[#1A201C]">Heart Rate</span>
+              <p className="text-[11px] text-[#687771]">Continuous ECG</p>
             </div>
 
             {/* ECG Sparkline Overlay */}
@@ -211,8 +219,8 @@ export default function DashboardTab({ biometrics, edgeProof, onNavigate }) {
             </div>
 
             <div className="mt-2.5">
-              <span className="text-sm font-bold text-[#1A201C]">Huyết áp</span>
-              <p className="text-[11px] text-[#687771]">Tâm thu / Tâm trương</p>
+              <span className="text-sm font-bold text-[#1A201C]">Blood Pressure</span>
+              <p className="text-[11px] text-[#687771]">Systolic / Diastolic</p>
             </div>
 
             {/* Pressure Waveform Sparkline */}
@@ -248,7 +256,7 @@ export default function DashboardTab({ biometrics, edgeProof, onNavigate }) {
           <div className="flex flex-col">
             <span className="text-sm font-bold text-[#1A201C]">Calories Burned</span>
             <span className="text-xs text-[#687771]">
-              Mục tiêu {biometrics.calories.target.toLocaleString()} kcal
+              Daily Goal: {biometrics.calories.target.toLocaleString()} kcal
             </span>
           </div>
         </div>
