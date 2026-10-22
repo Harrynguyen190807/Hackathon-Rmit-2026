@@ -1,278 +1,262 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  Activity,
+  LayoutGrid,
   ScanLine,
-  Sparkles,
+  Bot,
   CalendarClock,
-  Bell,
-  User,
   ShieldCheck,
-  HeartPulse,
-  LogIn,
+  Lock,
+  Sparkles,
+  Wifi,
+  BatteryCharging,
+  User,
 } from 'lucide-react';
-import {
-  SYNTHETIC_PATIENT_VAULT,
-  encryptHealthPayloadAtEdge,
-} from './services/tidecloak';
 import DashboardTab from './components/DashboardTab';
 import ScannerTab from './components/ScannerTab';
-import AiAssistantTab from './components/AiAssistantTab';
+import AssistantTab from './components/AssistantTab';
 import ScheduleTab from './components/ScheduleTab';
 import ProfileTab from './components/ProfileTab';
 import AuthScreen from './components/AuthScreen';
-
-const TABS = [
-  { id: 'dashboard', label: 'Home', icon: Activity },
-  { id: 'scanner', label: 'Scan Rx', icon: ScanLine, badge: true },
-  { id: 'ai', label: 'AI Health', icon: Sparkles },
-  { id: 'schedule', label: 'Trends', icon: CalendarClock },
-  { id: 'profile', label: 'Profile', icon: User },
-];
+import WelcomeScreen from './components/WelcomeScreen';
+import { getTideCloakStatus } from './services/tidecloak';
 
 export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
+  const [activeTab, setActiveTab] = useState('dashboard');
+  // 'welcome' | 'auth' | 'app'
+  const [screenStage, setScreenStage] = useState('welcome');
+  const [authInitialMode, setAuthInitialMode] = useState('signin');
   const [userProfile, setUserProfile] = useState({
     name: 'Michelle Nguyen',
     phone: '+1 929 391 82 81',
-    email: 'michelle.ng@vitatrack.health',
-    vitaId: 'VT-3311045090',
-    emergentAuthorityEnabled: true,
+    email: 'michelle.nguyen@vitatrack.health',
+    vitalId: 'VT-3311045090',
+    streakDays: 75,
+    badgesCount: 81,
+    isPro: true,
   });
+  const [tideStatus] = useState(() => getTideCloakStatus());
+  const [currentTime, setCurrentTime] = useState('09:41');
 
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [activeRxKey, setActiveRxKey] = useState('standardCardioRx');
+  useEffect(() => {
+    const updateClock = () => {
+      const now = new Date();
+      setCurrentTime(
+        now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
+      );
+    };
+    updateClock();
+    const interval = setInterval(updateClock, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
-  const activePrescription = SYNTHETIC_PATIENT_VAULT.presetPrescriptions[activeRxKey];
+  const navItems = [
+    { id: 'dashboard', label: 'Home', icon: LayoutGrid },
+    { id: 'scanner', label: 'Scan Rx', icon: ScanLine },
+    { id: 'assistant', label: 'AI Health', icon: Bot },
+    { id: 'schedule', label: 'Trends', icon: CalendarClock },
+    { id: 'profile', label: 'Profile', icon: User },
+  ];
 
-  const [scheduleItems, setScheduleItems] = useState([
-    {
-      id: 'sched-0800',
-      time: '08:00',
-      period: 'Buổi sáng',
-      name: 'Amlodipine Besylate',
-      dosage: '5mg',
-      category: 'Hạ huyết áp & mạch vành',
-      instruction: '1 viên sau ăn sáng',
-      taken: true,
-    },
-    {
-      id: 'sched-1900',
-      time: '19:00',
-      period: 'Buổi tối',
-      name: 'Metformin Hydrochloride',
-      dosage: '500mg',
-      category: 'Kiểm soát đường huyết',
-      instruction: '1 viên cùng bữa tối',
-      taken: true,
-    },
-    {
-      id: 'sched-2130',
-      time: '21:30',
-      period: 'Trước ngủ',
-      name: 'Atorvastatin Calcium',
-      dosage: '10mg',
-      category: 'Hạ mỡ máu (Statin)',
-      instruction: '1 viên trước khi ngủ',
-      taken: false,
-    },
-  ]);
-
-  const edgeProof = useMemo(() => {
-    return encryptHealthPayloadAtEdge(
-      activeTab.toUpperCase() + '_TELEMETRY',
-      activePrescription
-    );
-  }, [activeTab, activePrescription]);
-
-  const handleToggleDose = (id) => {
-    setScheduleItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, taken: !item.taken } : item))
-    );
-  };
-
-  const handleSaveToSchedule = (medications) => {
-    const updated = medications.map((m, idx) => ({
-      id: `sched-${idx}-${Date.now()}`,
-      time: m.time || (idx === 0 ? '08:00' : idx === 1 ? '19:00' : '21:30'),
-      period: m.period || 'Hàng ngày',
-      name: m.name,
-      dosage: m.dosage,
-      category: m.category,
-      instruction: m.instruction,
-      taken: idx === 0,
-    }));
-    setScheduleItems(updated);
-  };
-
-  const handleAuthenticated = (profileData) => {
-    setUserProfile((prev) => ({ ...prev, ...profileData }));
-    setIsAuthenticated(true);
-    setActiveTab('dashboard');
-  };
-
-  const currentTabTitle = {
-    dashboard: 'VitaTrack Dashboard',
-    scanner: 'Quét Đơn Thuốc',
-    ai: 'AI Health Assistant',
-    schedule: 'Lịch & Xu Hướng',
-    profile: 'Hồ Sơ Cá Nhân',
-  }[activeTab];
+  const isLightScreen = screenStage === 'welcome' || screenStage === 'auth';
 
   return (
-    <div className="min-h-screen w-full py-0 sm:py-6 px-0 sm:px-4 flex flex-col items-center justify-center">
-      {/* Judge Context Top Bar on Desktop */}
-      <div className="hidden sm:flex items-center justify-between w-full max-w-md mb-3 px-3.5 py-1.5 rounded-full bg-[#0b3026] text-white text-xs shadow-md">
-        <span className="flex items-center gap-1.5 font-bold text-[#cceda3]">
-          <ShieldCheck className="w-4 h-4" />
-          VitaTrack Health × TideCloak
-        </span>
-        <button
-          type="button"
-          onClick={() => setIsAuthenticated(!isAuthenticated)}
-          className="px-2.5 py-0.5 rounded-full bg-white/15 hover:bg-white/25 text-[11px] font-bold text-[#cceda3] flex items-center gap-1 transition-colors"
-        >
-          <LogIn className="w-3 h-3" />
-          {isAuthenticated ? 'Xem trang Đăng nhập' : 'Vào thẳng Dashboard'}
-        </button>
+    <div className="min-h-screen bg-[#070C0A] text-[#F1F5F3] flex flex-col items-center justify-center p-2 sm:p-6 relative overflow-hidden">
+      {/* Ambient Background Glows */}
+      <div className="pointer-events-none fixed -top-32 -left-32 w-96 h-96 rounded-full bg-emerald-500/10 blur-[120px]" />
+      <div className="pointer-events-none fixed -bottom-32 -right-32 w-96 h-96 rounded-full bg-teal-500/10 blur-[120px]" />
+
+      {/* Top Desktop Hackathon Banner + Stage Switcher */}
+      <div className="hidden sm:flex items-center gap-2 mb-3 px-3.5 py-1.5 rounded-full bg-[#111C18]/90 border border-emerald-500/25 text-xs text-emerald-300 shadow-lg backdrop-blur-md">
+        <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+        <span className="font-semibold tracking-wide">VitaTrack Health</span>
+        <span className="text-emerald-500/40">|</span>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setScreenStage('welcome')}
+            className={`px-2.5 py-0.5 rounded-full font-semibold transition-all text-[11px] ${
+              screenStage === 'welcome'
+                ? 'bg-emerald-500 text-[#062E22]'
+                : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300'
+            }`}
+          >
+            🌱 1. Mở App (Welcome)
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setAuthInitialMode('signin');
+              setScreenStage('auth');
+            }}
+            className={`px-2.5 py-0.5 rounded-full font-semibold transition-all text-[11px] ${
+              screenStage === 'auth'
+                ? 'bg-emerald-500 text-[#062E22]'
+                : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300'
+            }`}
+          >
+            🔑 2. Đăng Nhập (Sign In)
+          </button>
+          <button
+            type="button"
+            onClick={() => setScreenStage('app')}
+            className={`px-2.5 py-0.5 rounded-full font-semibold transition-all text-[11px] ${
+              screenStage === 'app'
+                ? 'bg-emerald-500 text-[#062E22]'
+                : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300'
+            }`}
+          >
+            📱 3. Vào App Chính
+          </button>
+        </div>
       </div>
 
-      {/* Mobile Phone Frame Container */}
-      <div className="w-full max-w-md mx-auto min-h-screen sm:min-h-[820px] sm:max-h-[880px] bg-[#FBF8F2] sm:rounded-[42px] sm:border-[8px] sm:border-[#1A201C] shadow-[0_25px_70px_-15px_rgba(11,48,38,0.35)] flex flex-col relative overflow-hidden">
-        {/* Top Mobile Notch / Status Bar */}
-        <div className="hidden sm:flex items-center justify-between px-7 pt-2.5 pb-1 bg-[#FBF8F2] text-[#1A201C] text-[11px] font-bold select-none">
-          <span>09:41</span>
-          <div className="w-24 h-4 rounded-full bg-[#1A201C] flex items-center justify-center">
-            <span className="w-2 h-2 rounded-full bg-[#24473b] mr-2" />
+      {/* Mobile Frame Container */}
+      <div
+        className={`w-full max-w-md mx-auto rounded-[42px] border-[6px] shadow-[0_25px_70px_rgba(0,0,0,0.75)] overflow-hidden flex flex-col h-[840px] max-h-[92vh] relative ring-1 transition-colors duration-300 ${
+          isLightScreen
+            ? 'bg-[#FCF9F3] border-[#E5E0D4] ring-[#24473B]/15'
+            : 'bg-[#111C18] border-[#1F332B] ring-emerald-500/20'
+        }`}
+      >
+        {/* iOS / Mobile Status Bar */}
+        <div
+          className={`px-7 pt-3 pb-2 flex items-center justify-between text-xs font-semibold select-none shrink-0 transition-colors ${
+            isLightScreen
+              ? 'bg-[#FCF9F3] text-[#16231E]'
+              : 'bg-[#111C18]/95 text-[#94A39B]'
+          }`}
+        >
+          <span className="tracking-wider font-bold text-[14px]">{currentTime}</span>
+          <div className="w-24 h-4 rounded-full bg-black/90 border border-white/10 flex items-center justify-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-[9px] text-emerald-300 font-mono uppercase tracking-tighter">
+              ZKP-ACTIVE
+            </span>
           </div>
-          <span className="text-[10px] text-[#4b662b] flex items-center gap-1">
-            5G • 100%
-          </span>
+          <div className="flex items-center gap-1.5">
+            <Wifi className="w-3.5 h-3.5" />
+            <BatteryCharging
+              className={`w-4 h-4 ${isLightScreen ? 'text-[#24473B]' : 'text-emerald-400'}`}
+            />
+          </div>
         </div>
 
-        {!isAuthenticated ? (
-          <div className="flex-1 overflow-y-auto no-scrollbar">
-            <AuthScreen onAuthenticated={handleAuthenticated} />
-          </div>
-        ) : (
+        {screenStage === 'welcome' && (
+          <WelcomeScreen
+            onStartJourney={() => {
+              setAuthInitialMode('signup');
+              setScreenStage('auth');
+            }}
+            onSignIn={() => {
+              setAuthInitialMode('signin');
+              setScreenStage('auth');
+            }}
+          />
+        )}
+
+        {screenStage === 'auth' && (
+          <AuthScreen
+            key={authInitialMode}
+            initialMode={authInitialMode}
+            onBackToWelcome={() => setScreenStage('welcome')}
+            onLoginSuccess={(userData) => {
+              setUserProfile((prev) => ({ ...prev, ...userData }));
+              setScreenStage('app');
+            }}
+          />
+        )}
+
+        {screenStage === 'app' && (
           <>
-            {/* Sticky App Header */}
-            <header className="sticky top-0 z-30 bg-[#FBF8F2]/90 backdrop-blur-xl border-b border-[#ECE7DC]/80 px-5 h-14 flex items-center justify-between shrink-0">
+            {/* App Top Header with TideCloak Security Pill & Quick Profile Avatar */}
+            <header className="px-5 pt-2 pb-3 border-b border-emerald-500/10 bg-[#111C18]/90 backdrop-blur-md flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-full bg-[#c4ebda] flex items-center justify-center text-[#0b3026] shadow-sm">
-                  <HeartPulse className="w-5 h-5" />
+                <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center shadow-md shadow-emerald-500/20">
+                  <Sparkles className="w-5 h-5 text-[#062E22]" />
                 </div>
                 <div>
-                  <h1 className="text-sm font-extrabold text-[#1A201C] tracking-tight leading-none">
-                    {currentTabTitle}
-                  </h1>
-                  <span className="text-[10px] font-semibold text-[#4b662b] flex items-center gap-1 mt-0.5">
-                    <ShieldCheck className="w-3 h-3" /> Secured by TideCloak
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <h1 className="text-base font-bold tracking-tight text-white">VitaTrack</h1>
+                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                      AI + ZKP
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[#94A39B]">Smart Health &amp; Rx Safety</p>
                 </div>
               </div>
 
+              {/* Right Controls: TideCloak Status Pill + Avatar */}
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('schedule')}
-                  aria-label="Notifications"
-                  className="relative w-9 h-9 rounded-full bg-[#F5EFE4] flex items-center justify-center text-[#414845] hover:text-[#1A201C] transition-colors"
+                <div
+                  title={`DID: ${tideStatus.did}`}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-emerald-950/80 border border-emerald-500/30 text-[10px] font-medium text-emerald-300 shadow-inner"
                 >
-                  <Bell className="w-4 h-4" />
-                  <span className="absolute top-1.5 right-2 w-2 h-2 rounded-full bg-[#F3A871]" />
-                </button>
+                  <Lock className="w-3 h-3 text-emerald-400 shrink-0" />
+                  <span>TideCloak</span>
+                </div>
                 <button
                   type="button"
                   onClick={() => setActiveTab('profile')}
-                  title="Hồ sơ cá nhân"
-                  className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                  title="Hồ Sơ Cá Nhân"
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-extrabold transition-all border ${
                     activeTab === 'profile'
-                      ? 'bg-[#cceda3] text-[#0b3026] ring-2 ring-[#0b3026]'
-                      : 'bg-[#0b3026] text-white'
+                      ? 'bg-emerald-500 text-[#062E22] border-emerald-300 shadow-md shadow-emerald-500/30'
+                      : 'bg-[#1A2923] text-emerald-300 border-emerald-500/30 hover:border-emerald-400'
                   }`}
                 >
-                  <User className="w-4 h-4" />
+                  {userProfile.name
+                    .split(' ')
+                    .map((n) => n[0])
+                    .join('')
+                    .slice(0, 2)}
                 </button>
               </div>
             </header>
 
-            {/* Scrollable Screen Content Area */}
-            <main className="flex-1 overflow-y-auto no-scrollbar px-5 pt-4 pb-24">
-              {activeTab === 'dashboard' && (
-                <DashboardTab
-                  biometrics={SYNTHETIC_PATIENT_VAULT.biometrics}
-                  edgeProof={edgeProof}
-                  onNavigate={setActiveTab}
-                />
-              )}
-
-              {activeTab === 'scanner' && (
-                <ScannerTab
-                  activeRxKey={activeRxKey}
-                  onSelectRx={setActiveRxKey}
-                  prescription={activePrescription}
-                  edgeProof={edgeProof}
-                  onSaveToSchedule={handleSaveToSchedule}
-                  onNavigate={setActiveTab}
-                />
-              )}
-
-              {activeTab === 'ai' && (
-                <AiAssistantTab
-                  prescription={activePrescription}
-                  initialEdgeProof={edgeProof}
-                />
-              )}
-
-              {activeTab === 'schedule' && (
-                <ScheduleTab
-                  scheduleItems={scheduleItems}
-                  onToggleDose={handleToggleDose}
-                />
-              )}
-
+            {/* Main Scrollable Viewport */}
+            <main className="flex-1 overflow-y-auto no-scrollbar px-4 py-4 space-y-4">
+              {activeTab === 'dashboard' && <DashboardTab onNavigate={setActiveTab} />}
+              {activeTab === 'scanner' && <ScannerTab />}
+              {activeTab === 'assistant' && <AssistantTab />}
+              {activeTab === 'schedule' && <ScheduleTab />}
               {activeTab === 'profile' && (
                 <ProfileTab
                   user={userProfile}
+                  onLogout={() => {
+                    setAuthInitialMode('signin');
+                    setScreenStage('auth');
+                  }}
                   onNavigate={setActiveTab}
-                  onLogout={() => setIsAuthenticated(false)}
                 />
               )}
             </main>
 
-            {/* Floating Bottom Navigation Bar (5 Tabs: Home, Scan Rx, AI Health, Trends, Profile) */}
-            <div className="absolute bottom-3 left-0 right-0 z-40 px-3 pointer-events-none">
-              <nav className="pointer-events-auto mx-auto w-full bg-white/95 backdrop-blur-xl rounded-full p-1.5 shadow-[0_12px_32px_-4px_rgba(11,48,38,0.16)] border border-[#ECE7DC]">
-                <div className="grid grid-cols-5 gap-0.5">
-                  {TABS.map((tab) => {
-                    const IconComponent = tab.icon;
-                    const isActive = activeTab === tab.id;
-                    return (
-                      <button
-                        key={tab.id}
-                        type="button"
-                        onClick={() => setActiveTab(tab.id)}
-                        className={`flex flex-col items-center justify-center py-2 px-1 rounded-full transition-all duration-200 relative ${
-                          isActive
-                            ? 'bg-[#c7e89e] text-[#0b3026] font-extrabold shadow-sm'
-                            : 'text-[#687771] hover:text-[#1A201C] font-medium'
-                        }`}
-                      >
-                        <div className="relative flex items-center justify-center">
-                          <IconComponent className="w-4 h-4" />
-                          {tab.badge && (
-                            <span className="absolute -top-1 -right-1.5 w-2 h-2 rounded-full bg-[#4b662b] ring-2 ring-white" />
-                          )}
-                        </div>
-                        <span className="text-[10px] tracking-tight mt-0.5 truncate max-w-full">
-                          {tab.label}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </nav>
-            </div>
+            {/* Bottom Navigation Bar (5 Tabs) */}
+            <nav className="px-3 py-2.5 bg-[#0D1613]/95 backdrop-blur-xl border-t border-emerald-500/15 flex items-center justify-around shrink-0">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = activeTab === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setActiveTab(item.id)}
+                    className={`flex flex-col items-center justify-center py-1.5 px-2.5 rounded-2xl transition-all duration-200 ${
+                      isActive
+                        ? 'bg-emerald-500/15 text-emerald-400 scale-105'
+                        : 'text-[#94A39B] hover:text-white'
+                    }`}
+                  >
+                    <div className="relative">
+                      <Icon className={`w-5 h-5 ${isActive ? 'stroke-[2.4px]' : 'stroke-[1.8px]'}`} />
+                      {item.id === 'scanner' && (
+                        <span className="absolute -top-1 -right-1.5 w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                      )}
+                    </div>
+                    <span className="text-[10px] font-semibold mt-1 tracking-tight">{item.label}</span>
+                  </button>
+                );
+              })}
+            </nav>
           </>
         )}
       </div>

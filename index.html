@@ -403,14 +403,104 @@
       }
 
       // ==========================================
+      // WELCOME SCREEN: LÚC MỞ APP (From Stitch VitaTrack - Chào Mừng)
+      // ==========================================
+      function WelcomeScreen({ onStartJourney, onSignIn }) {
+        return (
+          <div className="flex-1 flex flex-col justify-between bg-[#FCF9F3] text-[#1C1C18] px-6 pt-5 pb-6 min-h-[750px] select-none relative overflow-hidden">
+            {/* Hero Visual Sanctuary: Brand Pulse & Organic Logo Centerpiece */}
+            <div className="relative flex flex-col items-center justify-center pt-5 pb-2">
+              <div className="absolute w-48 h-48 rounded-full bg-[#CCEDA3]/45 blur-2xl pointer-events-none -top-1"></div>
+              <div className="absolute w-36 h-36 rounded-full bg-[#C4EBDA]/55 blur-xl pointer-events-none top-4 animate-pulse"></div>
+
+              {/* Official VitaTrack Logo Squircle Container */}
+              <div className="relative z-10 p-3 bg-white rounded-[28px] shadow-[0_12px_32px_-6px_rgba(11,48,38,0.14)] flex items-center justify-center border border-[#ECE7DC]/60">
+                <div className="relative w-20 h-20 rounded-[22px] bg-gradient-to-br from-[#24473B] to-[#0B3026] flex items-center justify-center overflow-hidden p-2 shadow-inner">
+                  <svg className="w-14 h-14" fill="none" viewBox="0 0 120 120">
+                    <circle cx="60" cy="60" opacity="0.45" r="46" stroke="#437763" strokeDasharray="3 3" strokeWidth="2" />
+                    <path d="M60 88 C60 88 32 70 32 50 C32 38 41 31 51 31 C57 31 60 35 60 35 C60 35 63 31 69 31 C79 31 88 38 88 50 C88 70 60 88 60 88 Z" fill="none" stroke="#C6E79D" strokeLinecap="round" strokeLinejoin="round" strokeWidth="6" />
+                    <path d="M40 52 L52 52 L57 41 L63 63 L68 47 L72 52 L80 52" fill="none" stroke="#FFFFFF" strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" />
+                  </svg>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-white/10 pointer-events-none"></div>
+                </div>
+              </div>
+
+              {/* Brand Name Lockup */}
+              <div className="mt-4 text-center relative z-10">
+                <div className="flex items-center justify-center gap-1">
+                  <span className="text-[24px] leading-tight tracking-tight font-bold text-[#0B3026]">
+                    VitaTrack
+                  </span>
+                </div>
+                <div className="inline-flex items-center gap-1.5 mt-1.5 px-3 py-1 rounded-full bg-[#C7E89E]/65">
+                  <span className="w-2 h-2 rounded-full bg-[#4B662B] animate-pulse"></span>
+                  <span className="text-[10.5px] font-bold text-[#344E15] tracking-widest uppercase">
+                    HEALTH &amp; AI PRESCRIPTION
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Warm & Poetic Welcoming Messaging */}
+            <div className="text-center mt-2 px-1">
+              <h1 className="text-[28px] leading-tight font-extrabold text-[#1A201C] tracking-tight">
+                Welcome to <span className="text-[#0B3026]">VitaTrack</span>
+              </h1>
+              <div className="mt-4 p-4 rounded-2xl bg-[#F6F3ED] border border-[#ECE7DC]/80 shadow-sm">
+                <p className="text-[14px] text-[#1C1C18] leading-relaxed italic font-medium">
+                  “Where every heartbeat matters, and smart health meets mindful care.”
+                </p>
+              </div>
+            </div>
+
+            {/* Interactive Call to Action Area */}
+            <div className="flex flex-col items-center mt-5 w-full gap-3">
+              <button
+                type="button"
+                onClick={onStartJourney}
+                className="group relative w-full flex items-center justify-center gap-2 py-4 px-6 rounded-full bg-[#0B3026] hover:bg-[#164235] text-white shadow-[0_10px_24px_-4px_rgba(11,48,38,0.35)] transition-all active:scale-[0.98] overflow-hidden"
+              >
+                <span className="text-[15.5px] font-bold tracking-wide">
+                  Start Your Journey
+                </span>
+                <span className="text-lg leading-none transition-transform group-hover:translate-x-1">&rarr;</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={onSignIn}
+                className="flex items-center justify-center py-2 px-4 text-[#1A201C] text-[14px] font-semibold hover:text-[#0B3026] transition-colors"
+              >
+                <span>Already have an account?</span>
+                <span className="mx-2 text-[#C1C8C3]">&bull;</span>
+                <span className="text-[#0B3026] underline underline-offset-4 font-bold">
+                  Sign In
+                </span>
+              </button>
+            </div>
+
+            {/* Trust, Compliance & Security Badge */}
+            <div className="flex flex-col items-center gap-1.5 mt-4 pb-1">
+              <div className="inline-flex items-center justify-center gap-1.5 py-1.5 px-3.5 rounded-full bg-[#F6F3ED] border border-[#ECE7DC] shadow-sm">
+                <IconShieldCheck className="w-4 h-4 text-[#4B662B]" />
+                <span className="text-[11px] text-[#687771] font-semibold tracking-wide">
+                  HIPAA Encrypted &bull; VitalID Security
+                </span>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // ==========================================
       // AUTH SCREEN: SIGN IN & SIGN UP (From Stitch VitaTrack - Đăng Nhập)
       // ==========================================
-      function AuthScreen({ onAuthenticated }) {
-        const [mode, setMode] = useState('signin'); // 'signin' | 'signup'
+      function AuthScreen({ onAuthenticated, onBackToWelcome, initialMode = 'signin' }) {
+        const [mode, setMode] = useState(initialMode); // 'signin' | 'signup'
         const [fullName, setFullName] = useState('Michelle Nguyen');
         const [phone, setPhone] = useState('+1 929 391 82 81');
         const [email, setEmail] = useState('michelle.ng@vitatrack.health');
-        const [password, setPassword] = useState('••••••••••••');
+        const [password, setPassword] = useState('••••••••');
 
         const handleSubmit = (e) => {
           e.preventDefault();
@@ -423,8 +513,23 @@
         };
 
         return (
-          <div className="flex-1 flex flex-col px-6 pt-3 pb-6 justify-between bg-[#FCF9F3] min-h-[750px]">
-            <section className="text-center mt-2">
+          <div className="flex-1 flex flex-col px-7 pt-3 pb-5 justify-between bg-[#FCF9F3] min-h-[750px] select-none">
+            {onBackToWelcome && (
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={onBackToWelcome}
+                  className="text-xs font-semibold text-[#5F736B] hover:text-[#1B2F27] flex items-center gap-1"
+                >
+                  <span>&larr; Welcome</span>
+                </button>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#24473B] bg-[#E9F7DA] px-2.5 py-0.5 rounded-full">
+                  VitaID Zero-Knowledge
+                </span>
+              </div>
+            )}
+
+            <section className="text-center mt-1 mb-1">
               <div className="inline-flex items-center justify-center mb-3">
                 <div className="w-16 h-16 rounded-[22px] bg-gradient-to-br from-[#2D5A4A] to-[#19332A] shadow-md flex items-center justify-center p-1.5 relative border border-white/20">
                   <svg className="w-12 h-12" fill="none" viewBox="0 0 120 120">
@@ -435,28 +540,10 @@
                 </div>
               </div>
 
-              {/* Switch Pill */}
-              <div className="inline-flex p-1 rounded-full bg-[#ECE6D9] mb-3">
-                <button
-                  type="button"
-                  onClick={() => setMode('signin')}
-                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${mode === 'signin' ? 'bg-[#24473B] text-white shadow-sm' : 'text-[#52635D]'}`}
-                >
-                  Đăng Nhập (Sign In)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMode('signup')}
-                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${mode === 'signup' ? 'bg-[#24473B] text-white shadow-sm' : 'text-[#52635D]'}`}
-                >
-                  Tạo Tài Khoản (Sign Up)
-                </button>
-              </div>
-
-              <h1 className="text-2xl font-extrabold text-[#1B2F27] tracking-tight mb-1">
+              <h1 className="text-3xl font-extrabold text-[#1B2F27] tracking-tight mb-1">
                 {mode === 'signin' ? 'Sign In' : 'Create Account'}
               </h1>
-              <p className="text-xs text-[#687C74] font-medium">
+              <p className="text-xs text-[#687C74] font-medium tracking-wide">
                 {mode === 'signin' ? 'Hồ sơ sức khỏe & Đơn thuốc cá nhân' : 'Khởi tạo hộ chiếu sức khỏe phân quyền TideCloak'}
               </p>
             </section>
@@ -482,10 +569,14 @@
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="w-full bg-transparent border-0 outline-none text-[#1B2F27] font-semibold text-sm tracking-wide"
+                    className="w-full bg-transparent border-0 outline-none text-[#1B2F27] font-semibold text-base tracking-wide"
                     required
                   />
-                  <span className="text-[#24473B] text-xs font-bold">✓ VitaID</span>
+                  <div className="text-[#24473B]/50 pr-1" title="Đã đồng bộ VitaID">
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path clipRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" fillRule="evenodd" />
+                    </svg>
+                  </div>
                 </div>
 
                 {mode === 'signup' && (
@@ -507,15 +598,17 @@
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-transparent border-0 outline-none text-[#1B2F27] font-extrabold text-base tracking-widest"
+                    className="w-full bg-transparent border-0 outline-none text-[#1B2F27] font-extrabold text-lg tracking-widest"
                     required
                   />
                   {mode === 'signin' && (
-                    <span className="text-xs font-semibold text-[#667E74] whitespace-nowrap pl-2 cursor-pointer">Forgot password?</span>
+                    <span className="text-xs font-semibold text-[#667E74] hover:text-[#24473B] whitespace-nowrap pl-2 cursor-pointer">
+                      Forgot password?
+                    </span>
                   )}
                 </div>
 
-                <div className="flex items-center justify-between px-1">
+                <div className="flex items-center justify-between px-1.5 pt-0.5 pb-1">
                   <label className="flex items-center cursor-pointer space-x-2">
                     <input type="checkbox" defaultChecked className="w-4 h-4 rounded accent-[#24473B]" />
                     <span className="text-xs font-medium text-[#5F736B]">
@@ -533,13 +626,13 @@
                 </button>
               </form>
 
-              <div className="text-center pt-1">
+              <div className="text-center pt-1.5">
                 <p className="text-xs text-[#52635D]">
                   {mode === 'signin' ? "Don't have an account?" : 'Already have an account?'}
                   <button
                     type="button"
                     onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
-                    className="font-bold text-[#E28919] hover:text-[#C7720E] ml-1.5 underline"
+                    className="font-bold text-[#E28919] hover:text-[#C7720E] ml-1.5 transition-colors"
                   >
                     {mode === 'signin' ? 'Sign Up' : 'Sign In'}
                   </button>
@@ -547,34 +640,43 @@
               </div>
             </section>
 
-            {/* Social Logins */}
+            {/* Social Logins matching Stitch SVG buttons */}
             <section className="w-full mt-2">
               <div className="relative flex items-center justify-center mb-3.5">
                 <div className="w-full border-t border-[#E3DDD1]" />
-                <span className="absolute px-3 bg-[#FCF9F3] text-[11px] font-medium text-[#7C8F87]">Or sign in with:</span>
+                <span className="absolute px-3 bg-[#FCF9F3] text-[11.5px] font-medium text-[#7C8F87]">Or sign in with:</span>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-3.5">
                 <button
                   type="button"
                   onClick={handleSubmit}
-                  className="h-11 flex items-center justify-center gap-2 rounded-full bg-white border border-[#DDD6C8] hover:border-[#24473B]/40 shadow-sm text-xs font-bold text-[#1877F2]"
+                  aria-label="Đăng nhập bằng Facebook"
+                  className="h-12 flex items-center justify-center rounded-full bg-white border border-[#DDD6C8] hover:border-[#24473B]/40 hover:bg-[#FAF7F1] shadow-sm active:scale-95 transition-all"
                 >
-                  <span>Facebook</span>
+                  <svg className="w-5 h-5 text-[#1877F2] fill-current" viewBox="0 0 24 24">
+                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                  </svg>
                 </button>
                 <button
                   type="button"
                   onClick={handleSubmit}
-                  className="h-11 flex items-center justify-center gap-2 rounded-full bg-white border border-[#DDD6C8] hover:border-[#24473B]/40 shadow-sm text-xs font-bold text-[#1B2F27]"
+                  aria-label="Đăng nhập bằng Google"
+                  className="h-12 flex items-center justify-center rounded-full bg-white border border-[#DDD6C8] hover:border-[#24473B]/40 hover:bg-[#FAF7F1] shadow-sm active:scale-95 transition-all"
                 >
-                  <span>Google</span>
+                  <svg className="w-5 h-5" viewBox="0 0 24 24">
+                    <path d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.67v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.16z" fill="#4285F4" />
+                    <path d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.94H1.24v3.15C3.26 21.36 7.33 24 12 24z" fill="#34A853" />
+                    <path d="M5.28 14.26c-.25-.72-.38-1.49-.38-2.26s.13-1.54.38-2.26V6.59H1.24C.45 8.2 0 10.04 0 12s.45 3.8 1.24 5.41l4.04-3.15z" fill="#FBBC05" />
+                    <path d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.24 6.59l4.04 3.15c.95-2.84 3.6-4.99 6.72-4.99z" fill="#EA4335" />
+                  </svg>
                 </button>
               </div>
             </section>
 
             <footer className="mt-3 text-center">
-              <div className="inline-flex items-center space-x-1.5 text-[10.5px] font-semibold text-[#5A6F66] bg-[#ECE6D9]/70 px-3 py-1 rounded-full">
+              <div className="inline-flex items-center space-x-1.5 text-[10.5px] font-semibold text-[#5A6F66] bg-[#ECE6D9]/60 px-3 py-1 rounded-full">
                 <IconShieldCheck className="w-3.5 h-3.5 text-[#24473B]" />
-                <span>Bảo mật y tế mã hóa HIPAA • TideCloak VitaID</span>
+                <span>Bảo mật y tế mã hóa HIPAA &bull; VitaID</span>
               </div>
             </footer>
           </div>
@@ -1496,7 +1598,9 @@
       // ROOT APP COMPONENT (Mobile Container max-w-md)
       // ==========================================
       function App() {
-        const [isAuthenticated, setIsAuthenticated] = useState(true);
+        // 'welcome' (Lúc mở app) | 'auth' (Đăng nhập / Đăng ký) | 'app' (Dashboard chính)
+        const [screenStage, setScreenStage] = useState('welcome');
+        const [authInitialMode, setAuthInitialMode] = useState('signin');
         const [userProfile, setUserProfile] = useState({
           name: 'Michelle Nguyen',
           phone: '+1 929 391 82 81',
@@ -1530,40 +1634,87 @@
 
         const handleAuthenticated = (data) => {
           setUserProfile((prev) => ({ ...prev, ...data }));
-          setIsAuthenticated(true);
+          setScreenStage('app');
           setActiveTab('dashboard');
         };
 
         return (
           <div className="min-h-screen py-0 sm:py-6 px-0 sm:px-4 flex flex-col items-center justify-center">
-            {/* Desktop Top Pill with Quick Switch to Login/Signup */}
-            <div className="hidden sm:flex items-center justify-between w-full max-w-md mb-3 px-3.5 py-1.5 rounded-full bg-[#0b3026] text-white text-xs shadow-md">
-              <span className="flex items-center gap-1.5 font-bold text-[#cceda3]">
-                <IconShieldCheck className="w-4 h-4" /> VitaTrack × TideCloak
+            {/* Desktop Top Pill with Quick Switch between 1. Mở App (Welcome), 2. Đăng Nhập (Sign In), 3. App Chính */}
+            <div className="hidden sm:flex items-center justify-between w-full max-w-md mb-3 px-3 py-1.5 rounded-full bg-[#0b3026] text-white text-xs shadow-md gap-1">
+              <span className="flex items-center gap-1 font-bold text-[#cceda3] shrink-0">
+                <IconShieldCheck className="w-4 h-4" /> VitaTrack
               </span>
-              <button
-                type="button"
-                onClick={() => setIsAuthenticated(!isAuthenticated)}
-                className="px-2.5 py-0.5 rounded-full bg-white/15 hover:bg-white/25 text-[11px] font-bold text-[#cceda3] transition-colors"
-              >
-                {isAuthenticated ? '🔑 Xem trang Đăng Nhập / Đăng Ký' : '🏠 Vào thẳng Dashboard'}
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setScreenStage('welcome')}
+                  className={`px-2.5 py-0.5 rounded-full text-[10.5px] font-bold transition-colors ${
+                    screenStage === 'welcome' ? 'bg-[#cceda3] text-[#0b3026]' : 'bg-white/15 hover:bg-white/25 text-[#cceda3]'
+                  }`}
+                >
+                  🌱 1. Mở App
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthInitialMode('signin');
+                    setScreenStage('auth');
+                  }}
+                  className={`px-2.5 py-0.5 rounded-full text-[10.5px] font-bold transition-colors ${
+                    screenStage === 'auth' ? 'bg-[#cceda3] text-[#0b3026]' : 'bg-white/15 hover:bg-white/25 text-[#cceda3]'
+                  }`}
+                >
+                  🔑 2. Đăng Nhập
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setScreenStage('app')}
+                  className={`px-2.5 py-0.5 rounded-full text-[10.5px] font-bold transition-colors ${
+                    screenStage === 'app' ? 'bg-[#cceda3] text-[#0b3026]' : 'bg-white/15 hover:bg-white/25 text-[#cceda3]'
+                  }`}
+                >
+                  🏠 3. App Chính
+                </button>
+              </div>
             </div>
 
             {/* Phone Container: max-w-md mx-auto, rounded corners, subtle border, centered */}
-            <div className="w-full max-w-md mx-auto min-h-screen sm:min-h-[820px] sm:max-h-[880px] bg-[#FBF8F2] sm:rounded-[42px] sm:border-[8px] sm:border-[#1A201C] shadow-2xl flex flex-col relative overflow-hidden">
+            <div className="w-full max-w-md mx-auto min-h-screen sm:min-h-[820px] sm:max-h-[880px] bg-[#FCF9F3] sm:rounded-[42px] sm:border-[8px] sm:border-[#1A201C] shadow-2xl flex flex-col relative overflow-hidden">
               {/* Notch */}
-              <div className="hidden sm:flex items-center justify-between px-7 pt-2.5 pb-1 bg-[#FBF8F2] text-[11px] font-bold text-[#1A201C]">
+              <div className="hidden sm:flex items-center justify-between px-7 pt-2.5 pb-1 bg-[#FCF9F3] text-[11px] font-bold text-[#1A201C]">
                 <span>09:41</span>
                 <div className="w-24 h-3.5 bg-[#1A201C] rounded-full"></div>
                 <span className="text-[10px] text-[#4b662b]">5G • 100%</span>
               </div>
 
-              {!isAuthenticated ? (
+              {screenStage === 'welcome' && (
                 <div className="flex-1 overflow-y-auto no-scrollbar">
-                  <AuthScreen onAuthenticated={handleAuthenticated} />
+                  <WelcomeScreen
+                    onStartJourney={() => {
+                      setAuthInitialMode('signup');
+                      setScreenStage('auth');
+                    }}
+                    onSignIn={() => {
+                      setAuthInitialMode('signin');
+                      setScreenStage('auth');
+                    }}
+                  />
                 </div>
-              ) : (
+              )}
+
+              {screenStage === 'auth' && (
+                <div className="flex-1 overflow-y-auto no-scrollbar">
+                  <AuthScreen
+                    key={authInitialMode}
+                    initialMode={authInitialMode}
+                    onBackToWelcome={() => setScreenStage('welcome')}
+                    onAuthenticated={handleAuthenticated}
+                  />
+                </div>
+              )}
+
+              {screenStage === 'app' && (
                 <>
                   {/* Header */}
                   <header className="sticky top-0 z-30 bg-[#FBF8F2]/90 backdrop-blur-md border-b border-[#ECE7DC] px-5 h-14 flex items-center justify-between shrink-0">
@@ -1603,7 +1754,10 @@
                       <ProfileTab
                         user={userProfile}
                         onNavigate={setActiveTab}
-                        onLogout={() => setIsAuthenticated(false)}
+                        onLogout={() => {
+                          setAuthInitialMode('signin');
+                          setScreenStage('auth');
+                        }}
                       />
                     )}
                   </main>
