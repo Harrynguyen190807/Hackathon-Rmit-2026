@@ -1027,10 +1027,209 @@
       };
 
       // ==========================================
+      // TIDECLOAK IAM SIMULATION & ACCESS CHECKS
+      // ==========================================
+      const TIDECLOAK_ROLES_CATALOG = {
+        patient: {
+          key: 'patient',
+          label: 'Patient (Sovereign Owner)',
+          shortBadge: 'Patient • Owner',
+          vuid: 'vuid:tide:9f8c2a11-7e4b-4d20-b81a-3e1b44a0c901',
+          realmRoles: ['patient', 'user', 'emergent-authority'],
+          clientRoles: [
+            '_tide_biometrics.selfencrypt',
+            '_tide_biometrics.decrypt',
+            '_tide_prescriptions.selfencrypt',
+            '_tide_prescriptions.decrypt',
+            '_tide_allergies.selfencrypt',
+            '_tide_allergies.decrypt',
+            '_tide_diagnoses.selfencrypt',
+            '_tide_diagnoses.decrypt',
+            'rx:scan',
+            'ai:consult',
+          ],
+          description: 'Full sovereign decryption & encryption authority over all personal medical tags.',
+        },
+        clinician: {
+          key: 'clinician',
+          label: 'Clinician (Delegated Physician)',
+          shortBadge: 'Clinician • Delegated',
+          vuid: 'vuid:tide:dr-nguyen-4410-88b1-99c2-7721bc0012af',
+          realmRoles: ['clinician', 'user'],
+          clientRoles: [
+            '_tide_biometrics.decrypt',
+            '_tide_prescriptions.decrypt',
+            'rx:scan',
+            'ai:consult',
+          ],
+          description: 'Can view prescriptions & vitals. Locked out of Allergies & Diagnoses unless Patient grants Emergent Authority.',
+        },
+        ignorant_admin: {
+          key: 'ignorant_admin',
+          label: 'SysAdmin (Ignorant Admin)',
+          shortBadge: 'SysAdmin • Zero-Knowledge',
+          vuid: 'vuid:tide:admin-ops-0019-22a0-411f-0098ff12a300',
+          realmRoles: ['ignorant-admin', 'realm-admin'],
+          clientRoles: ['audit:export', 'system:health'],
+          description: 'Manages infrastructure & audit logs, but holds ZERO decryption keys for patient PHI.',
+        },
+      };
+
+      const TIDECLOAK_ARCHITECTURE_PLAN = [
+        {
+          layer: '1. Authentication & Session (IAMService / TideCloakContextProvider)',
+          sdkHook: 'useTideCloak() -> { authenticated, login, logout, vuid, tokenExp }',
+          whereItFits: 'src/components/AuthScreen.jsx & src/App.jsx',
+          purpose: 'Replaces static credentials with TideCloak OIDC / PKCE redirect + threshold-signed Doken (Decentralized Token).',
+        },
+        {
+          layer: '2. Role-Based Access Control (Realm & Client Roles)',
+          sdkHook: 'hasRealmRole(role) & hasClientRole(role, "vitatrack-client")',
+          whereItFits: 'src/components/DashboardTab.jsx, ScannerTab.jsx, AiAssistantTab.jsx, ProfileTab.jsx',
+          purpose: 'Enforces least-privilege access across Patient, Clinician, and Ignorant Admin personas.',
+        },
+        {
+          layer: '3. Tag-Based Edge E2EE (TideCloak doEncrypt / doDecrypt)',
+          sdkHook: 'doEncrypt([{ data, tags }]) & doDecrypt([{ encrypted, tags }])',
+          whereItFits: 'src/services/tidecloak.js, ScannerTab.jsx, ProfileTab.jsx',
+          purpose: 'Requires _tide_<tag>.selfencrypt and _tide_<tag>.decrypt roles embedded in the Doken to unlock PHI.',
+        },
+        {
+          layer: '4. Emergent Authority & Ignorant Admin Governance',
+          sdkHook: 'Patient-delegated _tide_allergies.decrypt & _tide_diagnoses.decrypt',
+          whereItFits: 'src/components/ProfileTab.jsx & TideCloakBadge.jsx',
+          purpose: 'Proves that even a compromised server or SysAdmin cannot read patient records without the patient’s threshold key.',
+        },
+      ];
+
+      function createTideCloakSession(roleKey = 'patient', emergentAuthorityGranted = false) {
+        const baseRole = TIDECLOAK_ROLES_CATALOG[roleKey] || TIDECLOAK_ROLES_CATALOG.patient;
+        const clientRoles = [...baseRole.clientRoles];
+        if (roleKey === 'clinician' && emergentAuthorityGranted) {
+          if (!clientRoles.includes('_tide_allergies.decrypt')) clientRoles.push('_tide_allergies.decrypt');
+          if (!clientRoles.includes('_tide_diagnoses.decrypt')) clientRoles.push('_tide_diagnoses.decrypt');
+        }
+        const nowSec = Math.floor(Date.now() / 1000);
+        return {
+          authenticated: true,
+          roleKey: baseRole.key,
+          roleLabel: baseRole.label,
+          shortBadge: baseRole.shortBadge,
+          description: baseRole.description,
+          vuid: baseRole.vuid,
+          emergentAuthorityGranted,
+          tokenExp: nowSec + 900,
+          dokenClaims: {
+            iss: 'https://auth.tidecloak.vitatrack.health/realms/vitatrack-sovereign-health',
+            sub: baseRole.vuid,
+            aud: 'vitatrack-client',
+            azp: 'vitatrack-client',
+            vuid: baseRole.vuid,
+            iat: nowSec,
+            exp: nowSec + 900,
+            realm_access: { roles: baseRole.realmRoles },
+            resource_access: { 'vitatrack-client': { roles: clientRoles } },
+          },
+        };
+      }
+
+      function hasRealmRole(session, role) {
+        if (!session?.authenticated) return false;
+        return Boolean(session?.dokenClaims?.realm_access?.roles?.includes(role));
+      }
+
+      function hasClientRole(session, role, clientId = 'vitatrack-client') {
+        if (!session?.authenticated) return false;
+        return Boolean(session?.dokenClaims?.resource_access?.[clientId]?.roles?.includes(role));
+      }
+
+      function doDecrypt(session, encryptedPayloads = []) {
+        return encryptedPayloads.map((item) => {
+          const tags = item.tags || [];
+          const allowed = tags.every((tag) => hasClientRole(session, `_tide_${tag}.decrypt`));
+          if (allowed) {
+            return {
+              authorized: true,
+              tags,
+              plaintext: item.plaintextFallback ?? '[DECRYPTED_AT_EDGE]',
+            };
+          }
+          return {
+            authorized: false,
+            tags,
+            plaintext: `🔒 [TIDECLOAK_ACCESS_DENIED: Missing _tide_${tags.join(', _tide_')}.decrypt]`,
+          };
+        });
+      }
+
+      function evaluateAccessChecks(session) {
+        const checks = [
+          {
+            id: 'biometrics_decrypt',
+            resource: 'Biometric Telemetry (HR / BP / Sleep)',
+            method: 'hasClientRole("_tide_biometrics.decrypt")',
+            allowed: hasClientRole(session, '_tide_biometrics.decrypt'),
+          },
+          {
+            id: 'prescriptions_decrypt',
+            resource: 'Prescription Vault & Schedule',
+            method: 'hasClientRole("_tide_prescriptions.decrypt")',
+            allowed: hasClientRole(session, '_tide_prescriptions.decrypt'),
+          },
+          {
+            id: 'rx_scan_write',
+            resource: 'Edge OCR Prescription Scanner (Write)',
+            method: 'hasClientRole("_tide_prescriptions.selfencrypt")',
+            allowed:
+              hasClientRole(session, '_tide_prescriptions.selfencrypt') ||
+              hasClientRole(session, 'rx:scan'),
+          },
+          {
+            id: 'allergies_decrypt',
+            resource: 'Sensitive Allergies & CYP3A4 Alerts',
+            method: 'hasClientRole("_tide_allergies.decrypt")',
+            allowed: hasClientRole(session, '_tide_allergies.decrypt'),
+          },
+          {
+            id: 'diagnoses_decrypt',
+            resource: 'Protected ICD-10 Diagnoses',
+            method: 'hasClientRole("_tide_diagnoses.decrypt")',
+            allowed: hasClientRole(session, '_tide_diagnoses.decrypt'),
+          },
+          {
+            id: 'ai_consult',
+            resource: 'Zero-Knowledge AI Physician Context',
+            method: 'hasClientRole("ai:consult")',
+            allowed: hasClientRole(session, 'ai:consult'),
+          },
+          {
+            id: 'audit_export',
+            resource: 'Ciphertext Infrastructure Audit Logs',
+            method: 'hasClientRole("audit:export")',
+            allowed:
+              hasClientRole(session, 'audit:export') || hasRealmRole(session, 'patient'),
+          },
+        ];
+        return checks;
+      }
+
+      // ==========================================
       // TIDECLOAK BADGE & INSPECTOR MODAL (100% ENGLISH)
       // ==========================================
-      function TideCloakBadge({ context = 'Zero-Trust Edge Encryption', proofHash = '0x8f4e9b21...c71a04', medications = [] }) {
+      function TideCloakBadge({
+        context = 'Zero-Trust Edge Encryption',
+        proofHash = '0x8f4e9b21...c71a04',
+        medications = [],
+        tideSession,
+        onSelectRole,
+        onToggleEmergentAuthority,
+      }) {
         const [open, setOpen] = useState(false);
+        const [inspectorTab, setInspectorTab] = useState('access');
+        const activeSession = tideSession || createTideCloakSession('patient', false);
+        const accessChecks = evaluateAccessChecks(activeSession);
+        const grantedCount = accessChecks.filter((c) => c.allowed).length;
+
         return (
           <>
             <div
@@ -1044,60 +1243,223 @@
                     <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-[#cceda3] animate-ping" />
                   </div>
                   <div className="min-w-0">
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-[11px] font-extrabold uppercase text-[#cceda3]">Secured by TideCloak</span>
-                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-white/15 text-white font-bold">Emergent Authority</span>
+                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-white/15 text-white font-bold">
+                        {activeSession.shortBadge}
+                      </span>
+                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[#cceda3]/25 text-[#cceda3] font-bold">
+                        {grantedCount}/{accessChecks.length} Checks
+                      </span>
                     </div>
                     <p className="text-[11px] text-[#e5e2dc] truncate">{context}</p>
                   </div>
                 </div>
-                <span className="text-[11px] text-[#cceda3] font-bold shrink-0">Inspect &rarr;</span>
+                <span className="text-[11px] text-[#cceda3] font-bold shrink-0">IAM &rarr;</span>
               </div>
             </div>
 
             {open && (
               <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-                <div className="w-full max-w-sm rounded-3xl bg-[#FBF8F2] border border-[#ECE7DC] shadow-2xl overflow-hidden text-[#1A201C]">
+                <div className="w-full max-w-md rounded-3xl bg-[#FBF8F2] border border-[#ECE7DC] shadow-2xl overflow-hidden text-[#1A201C]">
                   <div className="bg-[#0b3026] text-white p-4 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <IconShieldCheck className="w-5 h-5 text-[#cceda3]" />
-                      <h3 className="text-sm font-bold">TideCloak Emergent Authority</h3>
+                      <div>
+                        <h3 className="text-sm font-bold leading-tight">TideCloak IAM &amp; Access Control</h3>
+                        <p className="text-[10px] text-[#a9cfbf]">Realm: vitatrack-sovereign-health • Client: vitatrack-client</p>
+                      </div>
                     </div>
                     <button onClick={() => setOpen(false)} className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center font-bold">&times;</button>
                   </div>
-                  <div className="p-4 space-y-3 text-xs max-h-[70vh] overflow-y-auto">
-                    <div className="bg-white p-3 rounded-2xl border border-[#ECE7DC] space-y-1">
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-[#0b3026]">Emergent Authority &amp; ZKP Status</span>
-                        <span className="px-2 py-0.5 rounded-full bg-[#cceda3] text-[#0b3026] font-bold text-[10px]">VERIFIED</span>
+
+                  {onSelectRole && (
+                    <div className="bg-[#173d31] px-4 py-2.5 text-white border-b border-white/10">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#cceda3]">
+                          Simulate TideCloak Role (Switch Live Session):
+                        </span>
+                        <span className="text-[10px] font-mono text-[#a9cfbf]">
+                          {activeSession.vuid.slice(0, 22)}...
+                        </span>
                       </div>
-                      <p className="text-[#687771] text-[11px]">No single server holds a master decryption key. Decryption authority emerges only when explicitly authorized by the patient at the client edge.</p>
+                      <div className="grid grid-cols-3 gap-1.5">
+                        {Object.values(TIDECLOAK_ROLES_CATALOG).map((r) => {
+                          const isSelected = activeSession.roleKey === r.key;
+                          return (
+                            <button
+                              key={r.key}
+                              type="button"
+                              onClick={() => onSelectRole(r.key)}
+                              className={`py-1.5 px-2 rounded-xl text-[10px] font-extrabold transition-all ${
+                                isSelected
+                                  ? 'bg-[#cceda3] text-[#0b3026] shadow-xs'
+                                  : 'bg-white/10 text-white hover:bg-white/20'
+                              }`}
+                            >
+                              {r.key === 'patient'
+                                ? '👤 Patient'
+                                : r.key === 'clinician'
+                                ? '🩺 Clinician'
+                                : '🛡️ SysAdmin'}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
+                  )}
 
-                    <div className="bg-white p-3 rounded-2xl border border-[#ECE7DC] font-mono text-[11px] space-y-1">
-                      <div className="flex justify-between"><span className="text-[#687771]">Algorithm:</span><span className="font-bold">AES-256-GCM + Tide-MPC</span></div>
-                      <div className="flex justify-between"><span className="text-[#687771]">Payload Digest:</span><span className="text-[#4b662b] font-bold">{proofHash.slice(0, 18)}...</span></div>
-                      <div className="flex justify-between"><span className="text-[#687771]">Raw PII Exposed:</span><span className="text-[#4b662b] font-bold">FALSE (0 bytes)</span></div>
-                    </div>
+                  <div className="grid grid-cols-3 bg-[#f0eee8] p-1 mx-4 mt-3 rounded-xl text-[11px] font-bold">
+                    <button
+                      type="button"
+                      onClick={() => setInspectorTab('access')}
+                      className={`py-1.5 rounded-lg transition-colors ${
+                        inspectorTab === 'access' ? 'bg-white text-[#0b3026] shadow-xs' : 'text-[#687771]'
+                      }`}
+                    >
+                      Roles &amp; Access
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setInspectorTab('doken')}
+                      className={`py-1.5 rounded-lg transition-colors ${
+                        inspectorTab === 'doken' ? 'bg-white text-[#0b3026] shadow-xs' : 'text-[#687771]'
+                      }`}
+                    >
+                      Doken / E2EE
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setInspectorTab('plan')}
+                      className={`py-1.5 rounded-lg transition-colors ${
+                        inspectorTab === 'plan' ? 'bg-white text-[#0b3026] shadow-xs' : 'text-[#687771]'
+                      }`}
+                    >
+                      Architecture Plan
+                    </button>
+                  </div>
 
-                    <div className="bg-[#1A201C] text-[#cceda3] p-3 rounded-2xl font-mono text-[10px]">
-                      <div className="text-white font-bold mb-1">Sanitized AI Payload:</div>
-                      <pre className="whitespace-pre-wrap leading-relaxed text-[#e5e2dc]">{JSON.stringify({
-                        zkSessionDid: 'did:tide:zk:0x9f8c...3e1b44a0',
-                        patientIdentity: '[REDACTED_BY_TIDECLOAK_EDGE]',
-                        extractedTokens: medications.length > 0
-                          ? medications.map(m => ({
-                              brand_name: m.brand_name || m.name,
-                              active_ingredient: m.active_ingredient,
-                              dosage: m.dosage,
-                              scheduled_times: m.scheduled_times || [m.time],
-                              meal_relation: m.meal_relation || 'AFTER_MEAL'
-                            }))
-                          : ['Amlor 5mg', 'Glucophage 500mg', 'Lipitor 10mg']
-                      }, null, 2)}</pre>
-                    </div>
+                  <div className="p-4 space-y-3 text-xs max-h-[65vh] overflow-y-auto">
+                    {inspectorTab === 'access' && (
+                      <>
+                        <div className="bg-white p-3 rounded-2xl border border-[#ECE7DC] space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <span className="font-extrabold text-[#0b3026]">{activeSession.roleLabel}</span>
+                            <span className="px-2 py-0.5 rounded-full bg-[#cceda3] text-[#0b3026] font-bold text-[10px]">
+                              {grantedCount}/{accessChecks.length} GRANTED
+                            </span>
+                          </div>
+                          <p className="text-[#687771] text-[11px]">{activeSession.description}</p>
+                          {onToggleEmergentAuthority && (
+                            <div className="pt-1.5 flex items-center justify-between border-t border-[#ECE7DC]">
+                              <span className="text-[10.5px] font-bold text-[#24473b]">
+                                Patient Emergent Authority Delegation:
+                              </span>
+                              <button
+                                type="button"
+                                onClick={onToggleEmergentAuthority}
+                                className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold ${
+                                  activeSession.emergentAuthorityGranted
+                                    ? 'bg-[#cceda3] text-[#0b3026]'
+                                    : 'bg-[#f6f3ed] text-[#687771] border border-[#ECE7DC]'
+                                }`}
+                              >
+                                {activeSession.emergentAuthorityGranted
+                                  ? '🔓 Delegated to Clinician'
+                                  : '🔒 Locked by Patient'}
+                              </button>
+                            </div>
+                          )}
+                        </div>
 
-                    <button onClick={() => setOpen(false)} className="w-full py-2.5 rounded-full bg-[#24473b] text-white font-bold text-xs">Close Security Attestation</button>
+                        <div className="space-y-1.5">
+                          <div className="text-[10px] font-extrabold uppercase text-[#687771] px-1">
+                            Live TideCloak Access Checks (hasRealmRole / hasClientRole)
+                          </div>
+                          {accessChecks.map((chk) => (
+                            <div
+                              key={chk.id}
+                              className="bg-white p-2.5 rounded-xl border border-[#ECE7DC] flex items-center justify-between gap-2"
+                            >
+                              <div className="min-w-0">
+                                <div className="font-bold text-[#1A201C] text-[11px] truncate">{chk.resource}</div>
+                                <div className="font-mono text-[9.5px] text-[#687771] truncate">{chk.method}</div>
+                              </div>
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-[9.5px] font-extrabold shrink-0 ${
+                                  chk.allowed
+                                    ? 'bg-[#c7e89e] text-[#0b3026]'
+                                    : 'bg-[#ffdad6] text-[#93000a]'
+                                }`}
+                              >
+                                {chk.allowed ? 'ALLOW' : 'DENY'}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+
+                    {inspectorTab === 'doken' && (
+                      <>
+                        <div className="bg-white p-3 rounded-2xl border border-[#ECE7DC] font-mono text-[10.5px] space-y-1">
+                          <div className="flex justify-between"><span className="text-[#687771]">Algorithm:</span><span className="font-bold">BLS12-381-Tide-MPC + EdDSA</span></div>
+                          <div className="flex justify-between"><span className="text-[#687771]">Payload Digest:</span><span className="text-[#4b662b] font-bold">{proofHash.slice(0, 18)}...</span></div>
+                          <div className="flex justify-between"><span className="text-[#687771]">Realm Roles:</span><span className="font-bold text-[#0b3026]">{activeSession.dokenClaims.realm_access.roles.join(', ')}</span></div>
+                        </div>
+
+                        <div className="bg-[#1A201C] text-[#cceda3] p-3 rounded-2xl font-mono text-[10px]">
+                          <div className="text-white font-bold mb-1">Decoded TideCloak Doken Claims (JWT):</div>
+                          <pre className="whitespace-pre-wrap leading-relaxed text-[#e5e2dc] max-h-44 overflow-y-auto">
+                            {JSON.stringify(activeSession.dokenClaims, null, 2)}
+                          </pre>
+                        </div>
+
+                        <div className="bg-[#1A201C] text-[#cceda3] p-3 rounded-2xl font-mono text-[10px]">
+                          <div className="text-white font-bold mb-1">Sanitized AI Payload (_tide_prescriptions):</div>
+                          <pre className="whitespace-pre-wrap leading-relaxed text-[#e5e2dc] max-h-36 overflow-y-auto">
+                            {JSON.stringify(
+                              {
+                                vuid: activeSession.vuid,
+                                patientIdentity: '[REDACTED_BY_TIDECLOAK_EDGE]',
+                                canDecryptRx: hasClientRole(activeSession, '_tide_prescriptions.decrypt'),
+                                extractedTokens: hasClientRole(activeSession, '_tide_prescriptions.decrypt')
+                                  ? medications.map((m) => ({
+                                      brand_name: m.brand_name || m.name,
+                                      active_ingredient: m.active_ingredient,
+                                      dosage: m.dosage,
+                                    }))
+                                  : ['🔒 ENCRYPTED_CIPHERTEXT_BLOB'],
+                              },
+                              null,
+                              2
+                            )}
+                          </pre>
+                        </div>
+                      </>
+                    )}
+
+                    {inspectorTab === 'plan' && (
+                      <div className="space-y-2">
+                        <div className="text-[10.5px] font-bold text-[#0b3026] px-1">
+                          Where TideCloak Fits in VitaTrack Health (4-Layer Architecture):
+                        </div>
+                        {TIDECLOAK_ARCHITECTURE_PLAN.map((item, idx) => (
+                          <div key={idx} className="bg-white p-3 rounded-2xl border border-[#ECE7DC] space-y-1">
+                            <div className="font-extrabold text-[#0b3026] text-[11px]">{item.layer}</div>
+                            <div className="font-mono text-[9.5px] text-[#4b662b] bg-[#f6f3ed] px-2 py-0.5 rounded-md">
+                              {item.sdkHook}
+                            </div>
+                            <div className="text-[10px] font-semibold text-[#24473b]">Fits in: {item.whereItFits}</div>
+                            <p className="text-[10.5px] text-[#687771] leading-relaxed">{item.purpose}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <button onClick={() => setOpen(false)} className="w-full py-2.5 rounded-full bg-[#24473b] text-white font-bold text-xs">
+                      Close TideCloak Inspector
+                    </button>
                   </div>
                 </div>
               </div>
@@ -1190,24 +1552,47 @@
       }
 
       // ==========================================
-      // AUTH SCREEN: SIGN IN & SIGN UP (100% ENGLISH)
+      // AUTH SCREEN: SIGN IN & SIGN UP (100% ENGLISH + TIDECLOAK OIDC SIMULATION)
       // ==========================================
       function AuthScreen({ onAuthenticated, onBackToWelcome, initialMode = 'signin' }) {
         const [mode, setMode] = useState(initialMode);
+        const [selectedRoleKey, setSelectedRoleKey] = useState('patient');
         const [fullName, setFullName] = useState('Michelle Nguyen');
         const [phone, setPhone] = useState('+1 929 391 82 81');
         const [email, setEmail] = useState('michelle.ng@vitatrack.health');
         const [password, setPassword] = useState('••••••••');
 
+        const handleRolePreset = (roleKey) => {
+          setSelectedRoleKey(roleKey);
+          if (roleKey === 'patient') {
+            setFullName('Michelle Nguyen');
+            setEmail('michelle.ng@vitatrack.health');
+          } else if (roleKey === 'clinician') {
+            setFullName('Dr. David Nguyen, MD');
+            setEmail('dr.nguyen@cardio.vitatrack.health');
+          } else {
+            setFullName('Alex Mercer (SysAdmin)');
+            setEmail('ops.admin@infra.vitatrack.health');
+          }
+        };
+
         const handleSubmit = (e) => {
-          e.preventDefault();
+          if (e && e.preventDefault) e.preventDefault();
           onAuthenticated({
-            name: mode === 'signup' ? fullName || 'Michelle Nguyen' : 'Michelle Nguyen',
+            name: fullName || 'Michelle Nguyen',
             phone: phone || '+1 929 391 82 81',
             email: email || 'michelle.ng@vitatrack.health',
-            vitaId: 'VT-3311045090',
+            vitaId:
+              selectedRoleKey === 'patient'
+                ? 'VT-3311045090'
+                : selectedRoleKey === 'clinician'
+                ? 'MD-884120991'
+                : 'ADM-00192001',
+            roleKey: selectedRoleKey,
           });
         };
+
+        const activeRoleInfo = TIDECLOAK_ROLES_CATALOG[selectedRoleKey] || TIDECLOAK_ROLES_CATALOG.patient;
 
         return (
           <div className="flex-1 flex flex-col px-7 pt-3 pb-5 justify-between bg-[#FCF9F3] min-h-[750px] select-none">
@@ -1221,15 +1606,15 @@
                   <span>&larr; Welcome</span>
                 </button>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-[#24473B] bg-[#E9F7DA] px-2.5 py-0.5 rounded-full">
-                  VitaID Zero-Knowledge
+                  TideCloak OIDC • Doken
                 </span>
               </div>
             )}
 
             <section className="text-center mt-1 mb-1">
-              <div className="inline-flex items-center justify-center mb-3">
-                <div className="w-16 h-16 rounded-[22px] bg-gradient-to-br from-[#2D5A4A] to-[#19332A] shadow-md flex items-center justify-center p-1.5 relative border border-white/20">
-                  <svg className="w-12 h-12" fill="none" viewBox="0 0 120 120">
+              <div className="inline-flex items-center justify-center mb-2">
+                <div className="w-14 h-14 rounded-[20px] bg-gradient-to-br from-[#2D5A4A] to-[#19332A] shadow-md flex items-center justify-center p-1.5 relative border border-white/20">
+                  <svg className="w-11 h-11" fill="none" viewBox="0 0 120 120">
                     <circle cx="60" cy="60" opacity="0.6" r="44" stroke="#437763" strokeDasharray="3 3" strokeWidth="2" />
                     <path d="M60 88 C60 88 32 70 32 50 C32 38 41 31 51 31 C57 31 60 35 60 35 C60 35 63 31 69 31 C79 31 88 38 88 50 C88 70 60 88 60 88 Z" fill="none" stroke="#C6E79D" strokeLinecap="round" strokeLinejoin="round" strokeWidth="6" />
                     <path d="M40 52 L52 52 L57 41 L63 63 L68 47 L72 52 L80 52" fill="none" stroke="#FFFFFF" strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" />
@@ -1237,16 +1622,54 @@
                 </div>
               </div>
 
-              <h1 className="text-3xl font-extrabold text-[#1B2F27] tracking-tight mb-1">
-                {mode === 'signin' ? 'Sign In' : 'Create Account'}
+              <h1 className="text-2xl font-extrabold text-[#1B2F27] tracking-tight mb-0.5">
+                {mode === 'signin' ? 'TideCloak Sign In' : 'Create TideCloak Passport'}
               </h1>
               <p className="text-xs text-[#687C74] font-medium tracking-wide">
-                {mode === 'signin' ? 'Personal Health Records & Prescriptions' : 'Initialize Sovereign TideCloak Health Passport'}
+                Simulate TideCloak IAMService.login() &amp; Role-Based Doken
               </p>
             </section>
 
-            <section className="w-full space-y-3.5 my-2">
-              <form onSubmit={handleSubmit} className="space-y-3.5">
+            {/* Simulated TideCloak Role Selector */}
+            <section className="rounded-2xl bg-[#0b3026] text-white p-3 space-y-2 shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#cceda3]">
+                  Select Simulated TideCloak Role
+                </span>
+                <span className="text-[9.5px] font-mono text-[#a9cfbf]">
+                  {activeRoleInfo.realmRoles.join(', ')}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-1.5">
+                {Object.values(TIDECLOAK_ROLES_CATALOG).map((r) => {
+                  const active = selectedRoleKey === r.key;
+                  return (
+                    <button
+                      key={r.key}
+                      type="button"
+                      onClick={() => handleRolePreset(r.key)}
+                      className={`py-1.5 px-2 rounded-xl text-[10.5px] font-extrabold transition-all ${
+                        active
+                          ? 'bg-[#cceda3] text-[#0b3026] shadow-xs'
+                          : 'bg-white/10 text-white hover:bg-white/20'
+                      }`}
+                    >
+                      {r.key === 'patient'
+                        ? '👤 Patient'
+                        : r.key === 'clinician'
+                        ? '🩺 Clinician'
+                        : '🛡️ SysAdmin'}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-[10.5px] text-[#e5e2dc] leading-snug">
+                {activeRoleInfo.description}
+              </p>
+            </section>
+
+            <section className="w-full space-y-3 my-2">
+              <form onSubmit={handleSubmit} className="space-y-3">
                 {mode === 'signup' && (
                   <div className="relative bg-white border-[1.5px] border-[#E5E0D4] focus-within:border-[#24473B] rounded-[20px] px-4 py-3 flex items-center justify-between">
                     <span className="absolute -top-2.5 left-4 px-1.5 bg-white text-[11px] font-semibold text-[#7A8983]">Full Name</span>
@@ -1260,7 +1683,7 @@
                   </div>
                 )}
 
-                <div className="relative bg-white border-[1.5px] border-[#E5E0D4] focus-within:border-[#24473B] rounded-[20px] px-4 py-3.5 flex items-center justify-between">
+                <div className="relative bg-white border-[1.5px] border-[#E5E0D4] focus-within:border-[#24473B] rounded-[20px] px-4 py-3 flex items-center justify-between">
                   <span className="absolute -top-2.5 left-4 px-1.5 bg-white text-[11px] font-semibold text-[#7A8983]">Phone</span>
                   <input
                     type="tel"
@@ -1289,8 +1712,8 @@
                   </div>
                 )}
 
-                <div className="relative bg-white border-[1.5px] border-[#E5E0D4] focus-within:border-[#24473B] rounded-[20px] px-4 py-3.5 flex items-center justify-between">
-                  <span className="absolute -top-2.5 left-4 px-1.5 bg-white text-[11px] font-semibold text-[#7A8983]">Password</span>
+                <div className="relative bg-white border-[1.5px] border-[#E5E0D4] focus-within:border-[#24473B] rounded-[20px] px-4 py-3 flex items-center justify-between">
+                  <span className="absolute -top-2.5 left-4 px-1.5 bg-white text-[11px] font-semibold text-[#7A8983]">Password / Passkey</span>
                   <input
                     type="password"
                     value={password}
@@ -1309,21 +1732,25 @@
                   <label className="flex items-center cursor-pointer space-x-2">
                     <input type="checkbox" defaultChecked className="w-4 h-4 rounded accent-[#24473B]" />
                     <span className="text-xs font-medium text-[#5F736B]">
-                      {mode === 'signin' ? 'Remember me on this device' : 'Activate TideCloak Emergent Authority Key'}
+                      {mode === 'signin' ? 'Request TideCloak Doken (BLS12-381 Threshold Sign)' : 'Activate TideCloak Emergent Authority Key'}
                     </span>
                   </label>
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full py-4 px-6 rounded-full bg-gradient-to-r from-[#24473B] to-[#1A362C] text-white font-bold text-sm tracking-wider uppercase shadow-[0_10px_25px_-5px_rgba(36,71,59,0.35)] hover:brightness-105 active:scale-[0.985] transition-all flex items-center justify-center space-x-2"
+                  className="w-full py-3.5 px-6 rounded-full bg-gradient-to-r from-[#24473B] to-[#1A362C] text-white font-bold text-xs tracking-wider uppercase shadow-[0_10px_25px_-5px_rgba(36,71,59,0.35)] hover:brightness-105 active:scale-[0.985] transition-all flex items-center justify-center space-x-2"
                 >
-                  <span>{mode === 'signin' ? 'SIGN IN' : 'CREATE ACCOUNT'}</span>
+                  <span>
+                    {mode === 'signin'
+                      ? `SIGN IN WITH TIDECLOAK (${selectedRoleKey.toUpperCase()})`
+                      : 'INITIALIZE TIDECLOAK WALLET'}
+                  </span>
                   <span>&rarr;</span>
                 </button>
               </form>
 
-              <div className="text-center pt-1.5">
+              <div className="text-center pt-1">
                 <p className="text-xs text-[#52635D]">
                   {mode === 'signin' ? "Don't have an account?" : 'Already have an account?'}
                   <button
@@ -1337,43 +1764,10 @@
               </div>
             </section>
 
-            {/* Social Logins */}
-            <section className="w-full mt-2">
-              <div className="relative flex items-center justify-center mb-3.5">
-                <div className="w-full border-t border-[#E3DDD1]" />
-                <span className="absolute px-3 bg-[#FCF9F3] text-[11.5px] font-medium text-[#7C8F87]">Or sign in with:</span>
-              </div>
-              <div className="grid grid-cols-2 gap-3.5">
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  aria-label="Sign in with Facebook"
-                  className="h-12 flex items-center justify-center rounded-full bg-white border border-[#DDD6C8] hover:border-[#24473B]/40 hover:bg-[#FAF7F1] shadow-sm active:scale-95 transition-all"
-                >
-                  <svg className="w-5 h-5 text-[#1877F2] fill-current" viewBox="0 0 24 24">
-                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  aria-label="Sign in with Google"
-                  className="h-12 flex items-center justify-center rounded-full bg-white border border-[#DDD6C8] hover:border-[#24473B]/40 hover:bg-[#FAF7F1] shadow-sm active:scale-95 transition-all"
-                >
-                  <svg className="w-5 h-5" viewBox="0 0 24 24">
-                    <path d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.67v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.16z" fill="#4285F4" />
-                    <path d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.94H1.24v3.15C3.26 21.36 7.33 24 12 24z" fill="#34A853" />
-                    <path d="M5.28 14.26c-.25-.72-.38-1.49-.38-2.26s.13-1.54.38-2.26V6.59H1.24C.45 8.2 0 10.04 0 12s.45 3.8 1.24 5.41l4.04-3.15z" fill="#FBBC05" />
-                    <path d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.24 6.59l4.04 3.15c.95-2.84 3.6-4.99 6.72-4.99z" fill="#EA4335" />
-                  </svg>
-                </button>
-              </div>
-            </section>
-
-            <footer className="mt-3 text-center">
+            <footer className="mt-2 text-center">
               <div className="inline-flex items-center space-x-1.5 text-[10.5px] font-semibold text-[#5A6F66] bg-[#ECE6D9]/60 px-3 py-1 rounded-full">
                 <IconShieldCheck className="w-3.5 h-3.5 text-[#24473B]" />
-                <span>HIPAA Encrypted Medical Security &bull; VitaID</span>
+                <span>TideCloak PRISM MPC &bull; Zero-Knowledge IAM</span>
               </div>
             </footer>
           </div>
@@ -1381,9 +1775,17 @@
       }
 
       // ==========================================
-      // TAB 1: DASHBOARD (100% ENGLISH)
+      // TAB 1: DASHBOARD (100% ENGLISH + TIDECLOAK BIOMETRICS GUARD)
       // ==========================================
-      function DashboardTab({ user, onNavigate }) {
+      function DashboardTab({
+        user,
+        onNavigate,
+        tideSession,
+        onSelectRole,
+        onToggleEmergentAuthority,
+      }) {
+        const canDecryptBiometrics = hasClientRole(tideSession, '_tide_biometrics.decrypt');
+
         return (
           <div className="space-y-4 pb-6">
             <div className="flex items-center justify-between">
@@ -1399,7 +1801,9 @@
                     <span>👋</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-xs">
-                    <span className="px-2 py-0.5 rounded-full bg-[#c7e89e] text-[#0b3026] font-bold">+ 88%</span>
+                    <span className="px-2 py-0.5 rounded-full bg-[#c7e89e] text-[#0b3026] font-bold">
+                      {tideSession?.shortBadge || 'Patient • Owner'}
+                    </span>
                     <span className="text-[#687771]">• Sovereign Vault</span>
                   </div>
                 </div>
@@ -1407,7 +1811,29 @@
               <button onClick={() => onNavigate('profile')} className="w-10 h-10 rounded-2xl bg-white shadow-sm flex items-center justify-center text-[#1A201C]">&bull;&bull;&bull;</button>
             </div>
 
-            <TideCloakBadge context="Biometric Telemetry Encrypted on Device" />
+            <TideCloakBadge
+              context={
+                canDecryptBiometrics
+                  ? 'Biometric Telemetry Decrypted via _tide_biometrics.decrypt'
+                  : 'Ignorant Admin Mode: Missing _tide_biometrics.decrypt Role'
+              }
+              tideSession={tideSession}
+              onSelectRole={onSelectRole}
+              onToggleEmergentAuthority={onToggleEmergentAuthority}
+            />
+
+            {!canDecryptBiometrics && (
+              <div className="rounded-2xl bg-[#ffdad6] text-[#93000a] p-3.5 border border-[#ba1a1a]/30 text-xs space-y-1">
+                <div className="font-extrabold flex items-center justify-between">
+                  <span>🔒 TideCloak Access Check Failed: _tide_biometrics.decrypt</span>
+                  <span className="px-2 py-0.5 rounded bg-white/80 text-[9.5px] font-mono">DENY</span>
+                </div>
+                <p className="text-[11px] leading-relaxed">
+                  You are signed in as <strong>{tideSession?.roleLabel}</strong>. Under TideCloak&apos;s{' '}
+                  <strong>Ignorant Admin</strong> model, infrastructure administrators can monitor system health but cannot decrypt patient vitals. Switch to <strong>Patient</strong> or <strong>Clinician</strong> in the TideCloak bar above to unlock telemetry.
+                </p>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-2.5">
               <button onClick={() => onNavigate('scanner')} className="flex items-center justify-center gap-2 py-3 px-3 rounded-2xl bg-[#0b3026] text-white shadow-md active:scale-95 transition-transform">
@@ -1424,12 +1850,19 @@
             <div className="rounded-3xl bg-white p-5 shadow-sm border border-[#ECE7DC] flex items-center justify-between relative overflow-hidden">
               <div className="max-w-[70%]">
                 <span className="text-base font-bold text-[#1A201C]">Asclepios Score</span>
-                <p className="text-xs text-[#687771] mt-1">Based on continuous daily biometrics, your cardiovascular stability and sleep recovery are optimal.</p>
+                <p className="text-xs text-[#687771] mt-1">
+                  {canDecryptBiometrics
+                    ? 'Based on continuous daily biometrics, your cardiovascular stability and sleep recovery are optimal.'
+                    : '🔒 Encrypted payload (_tide_biometrics). TideCloak Doken lacks decryption capability.'}
+                </p>
                 <div className="mt-2.5 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#f6f3ed] text-[#4b662b] text-[10px] font-bold">
-                  <span className="w-2 h-2 rounded-full bg-[#4b662b]"></span> OPTIMAL VITALITY
+                  <span className="w-2 h-2 rounded-full bg-[#4b662b]"></span>{' '}
+                  {canDecryptBiometrics ? 'OPTIMAL VITALITY' : 'CIPHERTEXT LOCKED'}
                 </div>
               </div>
-              <div className="w-14 h-14 rounded-2xl bg-[#cceda3] flex items-center justify-center text-2xl font-extrabold text-[#0b3026] shadow-md">88</div>
+              <div className="w-14 h-14 rounded-2xl bg-[#cceda3] flex items-center justify-center text-2xl font-extrabold text-[#0b3026] shadow-md">
+                {canDecryptBiometrics ? '88' : '🔒'}
+              </div>
             </div>
 
             {/* Bento Grid */}
@@ -1437,11 +1870,21 @@
               <div className="rounded-3xl bg-white p-4 shadow-sm border border-[#ECE7DC] flex flex-col justify-between">
                 <div className="flex items-center justify-between">
                   <div className="w-8 h-8 rounded-full bg-[#c4ebda] flex items-center justify-center text-[#0b3026]"><IconHeart className="w-4 h-4" fill="#0b3026" /></div>
-                  <span className="px-2 py-0.5 rounded-full bg-[#f6f3ed] text-[#4b662b] text-[10px] font-bold">NORMAL</span>
+                  <span className="px-2 py-0.5 rounded-full bg-[#f6f3ed] text-[#4b662b] text-[10px] font-bold">
+                    {canDecryptBiometrics ? 'NORMAL' : 'LOCKED'}
+                  </span>
                 </div>
                 <div className="my-2">
                   <span className="text-xs font-bold text-[#1A201C]">Heart Rate</span>
-                  <div className="text-xl font-extrabold text-[#1A201C]">70 <span className="text-xs font-normal text-[#687771]">bpm</span></div>
+                  <div className="text-xl font-extrabold text-[#1A201C]">
+                    {canDecryptBiometrics ? (
+                      <>
+                        70 <span className="text-xs font-normal text-[#687771]">bpm</span>
+                      </>
+                    ) : (
+                      <span className="text-xs font-mono text-[#93000a]">🔒 [ENCRYPTED]</span>
+                    )}
+                  </div>
                 </div>
                 <svg className="w-full h-8" fill="none" viewBox="0 0 140 40">
                   <path d="M5 20 L40 20 L48 8 L56 32 L64 4 L72 24 L80 20 L135 20" stroke="#24473b" strokeWidth="2.2" strokeLinecap="round" />
@@ -1451,11 +1894,21 @@
               <div className="rounded-3xl bg-white p-4 shadow-sm border border-[#ECE7DC] flex flex-col justify-between">
                 <div className="flex items-center justify-between">
                   <div className="w-8 h-8 rounded-full bg-[#F3A871]/25 flex items-center justify-center text-[#663304]"><IconActivity className="w-4 h-4" /></div>
-                  <span className="px-2 py-0.5 rounded-full bg-[#F3A871]/20 text-[#663304] text-[10px] font-bold">OPTIMAL</span>
+                  <span className="px-2 py-0.5 rounded-full bg-[#F3A871]/20 text-[#663304] text-[10px] font-bold">
+                    {canDecryptBiometrics ? 'OPTIMAL' : 'LOCKED'}
+                  </span>
                 </div>
                 <div className="my-2">
                   <span className="text-xs font-bold text-[#1A201C]">Blood Pressure</span>
-                  <div className="text-xl font-extrabold text-[#1A201C]">120/78 <span className="text-xs font-normal text-[#687771]">mmHg</span></div>
+                  <div className="text-xl font-extrabold text-[#1A201C]">
+                    {canDecryptBiometrics ? (
+                      <>
+                        120/78 <span className="text-xs font-normal text-[#687771]">mmHg</span>
+                      </>
+                    ) : (
+                      <span className="text-xs font-mono text-[#93000a]">🔒 [ENCRYPTED]</span>
+                    )}
+                  </div>
                 </div>
                 <svg className="w-full h-8" fill="none" viewBox="0 0 140 40">
                   <path d="M5 28 Q35 8 65 20 T135 16" stroke="#E58B88" strokeWidth="2.2" strokeLinecap="round" />
@@ -1471,7 +1924,15 @@
                   <span className="text-[11px] text-[#687771]">Daily Goal: 2,200 kcal</span>
                 </div>
               </div>
-              <span className="text-lg font-extrabold text-[#1A201C]">2,000 <span className="text-xs font-normal text-[#687771]">kcal</span></span>
+              <span className="text-lg font-extrabold text-[#1A201C]">
+                {canDecryptBiometrics ? (
+                  <>
+                    2,000 <span className="text-xs font-normal text-[#687771]">kcal</span>
+                  </>
+                ) : (
+                  <span className="text-xs font-mono text-[#93000a]">🔒 [ENCRYPTED]</span>
+                )}
+              </span>
             </div>
 
             <div className="rounded-3xl bg-gradient-to-r from-[#D5EDAF] to-[#E9F6D6] p-4 flex items-center justify-between">
@@ -1479,19 +1940,35 @@
                 <div className="w-10 h-10 rounded-2xl bg-white/85 flex items-center justify-center text-[#0b3026]"><IconMoon className="w-5 h-5" /></div>
                 <div>
                   <span className="text-xs font-bold text-[#0b3026] block">Sleep Recovery</span>
-                  <span className="text-[11px] text-[#0b3026]/80">8.2 hrs • REM 2.4 hrs</span>
+                  <span className="text-[11px] text-[#0b3026]/80">
+                    {canDecryptBiometrics ? '8.2 hrs • REM 2.4 hrs' : '🔒 Protected by _tide_biometrics'}
+                  </span>
                 </div>
               </div>
-              <span className="px-2.5 py-1 rounded-full bg-[#0b3026] text-white text-[10px] font-bold">DEEP REST</span>
+              <span className="px-2.5 py-1 rounded-full bg-[#0b3026] text-white text-[10px] font-bold">
+                {canDecryptBiometrics ? 'DEEP REST' : 'LOCKED'}
+              </span>
             </div>
           </div>
         );
       }
 
       // ==========================================
-      // TAB 2: PRESCRIPTION SCANNER (100% ENGLISH + BRAND-FIRST OCR + JSON SCHEMA)
+      // TAB 2: PRESCRIPTION SCANNER (100% ENGLISH + BRAND-FIRST OCR + TIDECLOAK RBAC)
       // ==========================================
-      function ScannerTab({ currentRx, onUpdateRx, onNavigate, onSaveSchedule }) {
+      function ScannerTab({
+        currentRx,
+        onUpdateRx,
+        onNavigate,
+        onSaveSchedule,
+        tideSession,
+        onSelectRole,
+        onToggleEmergentAuthority,
+      }) {
+        const canDecryptRx = hasClientRole(tideSession, '_tide_prescriptions.decrypt');
+        const canScanRx =
+          hasClientRole(tideSession, '_tide_prescriptions.selfencrypt') ||
+          hasClientRole(tideSession, 'rx:scan');
         const [cameraActive, setCameraActive] = useState(false);
         const [facingMode, setFacingMode] = useState('environment');
         const [cameraError, setCameraError] = useState('');
@@ -1679,9 +2156,23 @@
             </div>
 
             <TideCloakBadge
-              context="Zero-Knowledge Proof Verified • OCR Sanitized at Edge"
+              context={
+                canDecryptRx
+                  ? 'Zero-Knowledge Proof Verified • OCR Sanitized at Edge'
+                  : 'Ignorant Admin Mode: Missing _tide_prescriptions.decrypt'
+              }
               medications={currentRx.medications}
+              tideSession={tideSession}
+              onSelectRole={onSelectRole}
+              onToggleEmergentAuthority={onToggleEmergentAuthority}
             />
+
+            {!canScanRx && (
+              <div className="rounded-2xl bg-[#ffdad6] text-[#93000a] p-3 border border-[#ba1a1a]/30 text-xs">
+                <strong>🔒 TideCloak Access Denied (`rx:scan` / `_tide_prescriptions.selfencrypt`):</strong>{' '}
+                Your current role (<strong>{tideSession?.roleLabel}</strong>) does not have permission to encrypt or view prescription payloads. Switch to <strong>Patient</strong> or <strong>Clinician</strong> in the TideCloak bar above.
+              </div>
+            )}
 
             <input
               ref={fileInputRef}
@@ -1971,27 +2462,38 @@
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="text-sm font-extrabold text-[#0b3026]">
-                          {m.brand_name || m.name} {m.dosage}
+                          {canDecryptRx
+                            ? `${m.brand_name || m.name} ${m.dosage}`
+                            : '🔒 [ENCRYPTED_RX_TAG]'}
                         </span>
                         <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#c7e89e]/70 text-[#0b3026] font-bold">
-                          {formatMealRelationLabel(m.meal_relation)}
+                          {canDecryptRx ? formatMealRelationLabel(m.meal_relation) : 'LOCKED'}
                         </span>
                       </div>
                       <div className="text-[11px] font-semibold text-[#4b662b] truncate">
-                        Active Ingredient: {m.active_ingredient || m.name}
+                        Active Ingredient:{' '}
+                        {canDecryptRx
+                          ? m.active_ingredient || m.name
+                          : 'Missing _tide_prescriptions.decrypt'}
                       </div>
                       <div className="text-[11px] text-[#687771] mt-0.5 leading-snug">
-                        {m.notes || m.instruction}
+                        {canDecryptRx
+                          ? m.notes || m.instruction
+                          : 'Ciphertext protected by TideCloak threshold key'}
                       </div>
                     </div>
                   </div>
                   {/* Unified Fixed-Width Symmetrical Time-Slot Frame */}
                   <div className="w-[118px] shrink-0 rounded-2xl bg-[#F5EFE4] border border-[#E5E0D4] p-1.5 flex flex-col items-center justify-center text-center gap-1 self-center">
                     <div className="w-full rounded-xl bg-white px-2 py-1 text-[11px] font-extrabold text-[#0b3026] shadow-xs tracking-tight text-center truncate">
-                      {(m.scheduled_times || [m.time || '08:00']).join(' • ')}
+                      {canDecryptRx
+                        ? (m.scheduled_times || [m.time || '08:00']).join(' • ')
+                        : '🔒 --:--'}
                     </div>
                     <span className="text-[9px] font-extrabold text-[#4b662b] uppercase tracking-wider leading-tight text-center">
-                      {formatCompactTimingLabel(m.timing_slots, m.frequency_per_day)}
+                      {canDecryptRx
+                        ? formatCompactTimingLabel(m.timing_slots, m.frequency_per_day)
+                        : 'ENCRYPTED'}
                     </span>
                   </div>
                 </div>
@@ -2027,9 +2529,17 @@
       }
 
       // ==========================================
-      // TAB 3: AI HEALTH ASSISTANT (100% ENGLISH + CONTEXTUAL MEMORY & REMINDERS)
+      // TAB 3: AI HEALTH ASSISTANT (100% ENGLISH + CONTEXTUAL MEMORY & TIDECLOAK GUARD)
       // ==========================================
-      function AiAssistantTab({ currentRx, onSaveSchedule }) {
+      function AiAssistantTab({
+        currentRx,
+        onSaveSchedule,
+        tideSession,
+        onSelectRole,
+        onToggleEmergentAuthority,
+      }) {
+        const canConsultAi = hasClientRole(tideSession, 'ai:consult');
+        const canDecryptRx = hasClientRole(tideSession, '_tide_prescriptions.decrypt');
         const [messages, setMessages] = useState([
           {
             id: 1,
@@ -2058,6 +2568,21 @@
           if (!text) setInput('');
 
           setTimeout(() => {
+            if (!canConsultAi || !canDecryptRx) {
+              setMessages((prev) => [
+                ...prev,
+                {
+                  id: Date.now() + 1,
+                  role: 'ai',
+                  text: `🔒 TideCloak Access Denied: Your active session (${tideSession?.roleLabel}) is missing required client roles ("ai:consult" and "_tide_prescriptions.decrypt").`,
+                  details: [
+                    'Ignorant Admin Protection: Infrastructure administrators cannot query the AI Physician with patient prescriptions.',
+                    'Switch to Patient or Clinician in the TideCloak IAM bar above to authorize E2E Zero-Knowledge AI consultation.',
+                  ],
+                },
+              ]);
+              return;
+            }
             const lower = q.toLowerCase();
             const meds = currentRx.medications || [];
             const medSummary = meds
@@ -2142,8 +2667,15 @@
             </div>
 
             <TideCloakBadge
-              context="Zero-Knowledge Proof Verified • Anonymous AI Context"
+              context={
+                canConsultAi
+                  ? 'Zero-Knowledge Proof Verified • Anonymous AI Context'
+                  : 'Ignorant Admin Mode: Missing ai:consult Role'
+              }
               medications={currentRx.medications}
+              tideSession={tideSession}
+              onSelectRole={onSelectRole}
+              onToggleEmergentAuthority={onToggleEmergentAuthority}
             />
 
             <div className="space-y-3">
@@ -2269,11 +2801,24 @@
       }
 
       // ==========================================
-      // TAB 5: ACCOUNT PROFILE (100% ENGLISH)
+      // TAB 5: ACCOUNT PROFILE (100% ENGLISH + TIDECLOAK RBAC & E2EE CHECKS)
       // ==========================================
-      function ProfileTab({ user, onNavigate, onLogout }) {
+      function ProfileTab({
+        user,
+        onNavigate,
+        onLogout,
+        tideSession,
+        onSelectRole,
+        onToggleEmergentAuthority,
+      }) {
         const [copied, setCopied] = useState(false);
-        const [clinicianUnlocked, setClinicianUnlocked] = useState(false);
+        const activeSession = tideSession || createTideCloakSession('patient', false);
+        const [allergiesTag, diagnosesTag] = doDecrypt(activeSession, [
+          { tags: ['allergies'], plaintextFallback: 'Penicillin, Grapefruit (CYP3A4)' },
+          { tags: ['diagnoses'], plaintextFallback: 'Stage 1 Hypertension (I10)' },
+        ]);
+        const canExportAudit =
+          hasClientRole(activeSession, 'audit:export') || hasRealmRole(activeSession, 'patient');
 
         const copyId = () => {
           const id = user?.vitaId || 'VT-3311045090';
@@ -2287,15 +2832,20 @@
             <section className="bg-white rounded-3xl p-4 shadow-sm border border-[#ECE7DC] space-y-3.5">
               <div className="flex items-start justify-between gap-3">
                 <div className="space-y-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <h2 className="text-lg font-extrabold text-[#0b3026] truncate">{user?.name || 'Michelle Nguyen'}</h2>
-                    <span className="px-1.5 py-0.5 rounded-full bg-[#cceda3] text-[#0b3026] text-[9px] font-bold">✓ Verified</span>
+                    <span className="px-2 py-0.5 rounded-full bg-[#cceda3] text-[#0b3026] text-[9px] font-bold">
+                      {activeSession.shortBadge}
+                    </span>
                   </div>
                   <div className="flex items-center gap-1.5 text-xs text-[#687771]">
                     <span className="font-mono font-semibold">ID: {user?.vitaId || 'VT-3311045090'}</span>
                     <button onClick={copyId} className="text-[10px] underline text-[#0b3026] font-bold">
                       {copied ? 'Copied!' : 'Copy'}
                     </button>
+                  </div>
+                  <div className="text-[10px] font-mono text-[#4b662b] truncate">
+                    Tide VUID: {activeSession.vuid}
                   </div>
                   <div className="flex flex-wrap gap-1.5 pt-1">
                     <span className="px-2.5 py-0.5 rounded-full bg-[#c7e89e] text-[#0b3026] text-[10px] font-extrabold">
@@ -2315,44 +2865,91 @@
 
               <div className="grid grid-cols-12 gap-2">
                 <div className="col-span-5 py-2 px-2 rounded-2xl bg-[#0b3026] text-white text-center">
-                  <div className="text-[9px] font-bold tracking-wider">★ VITATRACK</div>
-                  <div className="text-[10px] font-extrabold text-[#cceda3]">PRO MEMBER</div>
+                  <div className="text-[9px] font-bold tracking-wider">★ TIDECLOAK REALM</div>
+                  <div className="text-[10px] font-extrabold text-[#cceda3]">
+                    {activeSession.dokenClaims.realm_access.roles[0]?.toUpperCase()}
+                  </div>
                 </div>
                 <div className="col-span-5 py-2 px-2 rounded-2xl bg-[#f6f3ed] text-[#0b3026] text-center">
-                  <div className="text-[9px] font-extrabold">🏅 BADGES</div>
-                  <div className="text-[10px] font-bold text-[#687771]">81 EARNED</div>
+                  <div className="text-[9px] font-extrabold">🔑 CLIENT ROLES</div>
+                  <div className="text-[10px] font-bold text-[#687771]">
+                    {activeSession.dokenClaims.resource_access['vitatrack-client'].roles.length} GRANTED
+                  </div>
                 </div>
-                <div className="col-span-2 rounded-2xl bg-[#f6f3ed] flex items-center justify-center text-sm">🎁</div>
+                <div className="col-span-2 rounded-2xl bg-[#f6f3ed] flex items-center justify-center text-sm">🛡️</div>
               </div>
             </section>
 
-            {/* Patient-Controlled Access via TideCloak Emergent Authority */}
-            <section className="rounded-3xl p-4 bg-gradient-to-br from-[#0b3026] to-[#24473b] text-white shadow-md space-y-2.5">
+            {/* Simulated TideCloak Role Switcher & Emergent Authority */}
+            <section className="rounded-3xl p-4 bg-gradient-to-br from-[#0b3026] to-[#24473b] text-white shadow-md space-y-3">
               <div className="flex items-center justify-between">
                 <div>
                   <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#cceda3] block">
-                    TideCloak Emergent Authority
+                    TideCloak IAM Role Simulator
                   </span>
-                  <span className="text-xs font-bold">Patient-Controlled Clinician Access</span>
+                  <span className="text-xs font-bold">Test Roles &amp; Tag-Based Decryption Checks</span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setClinicianUnlocked(!clinicianUnlocked)}
-                  className={`px-3 py-1.5 rounded-full text-[10px] font-extrabold transition-all ${
-                    clinicianUnlocked ? 'bg-[#cceda3] text-[#0b3026]' : 'bg-white/15 text-white'
-                  }`}
-                >
-                  {clinicianUnlocked ? '🔓 Unlocked (15m)' : '🔒 Patient-Locked'}
-                </button>
+                {onToggleEmergentAuthority && (
+                  <button
+                    type="button"
+                    onClick={onToggleEmergentAuthority}
+                    className={`px-3 py-1.5 rounded-full text-[10px] font-extrabold transition-all ${
+                      activeSession.emergentAuthorityGranted
+                        ? 'bg-[#cceda3] text-[#0b3026]'
+                        : 'bg-white/15 text-white'
+                    }`}
+                  >
+                    {activeSession.emergentAuthorityGranted
+                      ? '🔓 Clinician Delegated (15m)'
+                      : '🔒 Patient-Locked'}
+                  </button>
+                )}
               </div>
-              <div className="rounded-2xl bg-black/25 p-2.5 text-[11px] space-y-1 font-mono border border-white/10">
-                <div className="flex justify-between">
-                  <span className="text-[#a9cfbf]">Allergies &amp; CYP3A4:</span>
-                  <span className="font-bold">{clinicianUnlocked ? 'Penicillin, Grapefruit' : '🔒 [LOCKED_BY_PATIENT]'}</span>
+
+              {onSelectRole && (
+                <div className="grid grid-cols-3 gap-1.5">
+                  {Object.values(TIDECLOAK_ROLES_CATALOG).map((r) => {
+                    const isSelected = activeSession.roleKey === r.key;
+                    return (
+                      <button
+                        key={r.key}
+                        type="button"
+                        onClick={() => onSelectRole(r.key)}
+                        className={`py-1.5 px-2 rounded-xl text-[10px] font-extrabold transition-all ${
+                          isSelected
+                            ? 'bg-[#cceda3] text-[#0b3026]'
+                            : 'bg-white/10 text-white hover:bg-white/20'
+                        }`}
+                      >
+                        {r.key === 'patient'
+                          ? '👤 Patient'
+                          : r.key === 'clinician'
+                          ? '🩺 Clinician'
+                          : '🛡️ SysAdmin'}
+                      </button>
+                    );
+                  })}
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-[#a9cfbf]">Protected Diagnoses:</span>
-                  <span className="font-bold">{clinicianUnlocked ? 'Stage 1 Hypertension (I10)' : '🔒 [LOCKED_BY_PATIENT]'}</span>
+              )}
+
+              <div className="rounded-2xl bg-black/25 p-3 text-[11px] space-y-1.5 font-mono border border-white/10">
+                <div className="flex justify-between items-center gap-2">
+                  <span className="text-[#a9cfbf] shrink-0">_tide_allergies.decrypt:</span>
+                  <span className={`font-bold text-right truncate ${allergiesTag.authorized ? 'text-[#cceda3]' : 'text-[#ffdad6]'}`}>
+                    {allergiesTag.plaintext}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center gap-2">
+                  <span className="text-[#a9cfbf] shrink-0">_tide_diagnoses.decrypt:</span>
+                  <span className={`font-bold text-right truncate ${diagnosesTag.authorized ? 'text-[#cceda3]' : 'text-[#ffdad6]'}`}>
+                    {diagnosesTag.plaintext}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center gap-2">
+                  <span className="text-[#a9cfbf] shrink-0">hasClientRole(&quot;audit:export&quot;):</span>
+                  <span className="font-bold text-right">
+                    {canExportAudit ? '✓ ALLOWED (Ciphertext Logs)' : '✗ DENIED'}
+                  </span>
                 </div>
               </div>
             </section>
@@ -2422,17 +3019,51 @@
       }
 
       // ==========================================
-      // ROOT APP COMPONENT (100% ENGLISH)
+      // ROOT APP COMPONENT (100% ENGLISH + TIDECLOAK SESSION STATE)
       // ==========================================
       function App() {
         const [screenStage, setScreenStage] = useState('welcome');
         const [authInitialMode, setAuthInitialMode] = useState('signin');
+        const [roleKey, setRoleKey] = useState('patient');
+        const [emergentAuthorityGranted, setEmergentAuthorityGranted] = useState(false);
         const [userProfile, setUserProfile] = useState({
           name: 'Michelle Nguyen',
           phone: '+1 929 391 82 81',
           email: 'michelle.ng@vitatrack.health',
           vitaId: 'VT-3311045090',
         });
+
+        const tideSession = createTideCloakSession(roleKey, emergentAuthorityGranted);
+
+        const handleSelectRole = (nextRoleKey) => {
+          setRoleKey(nextRoleKey);
+          if (nextRoleKey === 'patient') {
+            setUserProfile((p) => ({
+              ...p,
+              name: 'Michelle Nguyen',
+              email: 'michelle.ng@vitatrack.health',
+              vitaId: 'VT-3311045090',
+            }));
+          } else if (nextRoleKey === 'clinician') {
+            setUserProfile((p) => ({
+              ...p,
+              name: 'Dr. David Nguyen, MD',
+              email: 'dr.nguyen@cardio.vitatrack.health',
+              vitaId: 'MD-884120991',
+            }));
+          } else {
+            setUserProfile((p) => ({
+              ...p,
+              name: 'Alex Mercer (SysAdmin)',
+              email: 'ops.admin@infra.vitatrack.health',
+              vitaId: 'ADM-00192001',
+            }));
+          }
+        };
+
+        const handleToggleEmergentAuthority = () => {
+          setEmergentAuthorityGranted((prev) => !prev);
+        };
 
         const [activeTab, setActiveTab] = useState('dashboard');
         const [currentRx, setCurrentRx] = useState(SYNTHETIC_DATA.prescriptions.standardCardioRx);
@@ -2494,6 +3125,9 @@
         };
 
         const handleAuthenticated = (data) => {
+          if (data?.roleKey) {
+            setRoleKey(data.roleKey);
+          }
           setUserProfile((prev) => ({ ...prev, ...data }));
           setScreenStage('app');
           setActiveTab('dashboard');
@@ -2581,7 +3215,9 @@
                       <div className="w-8 h-8 rounded-full bg-[#c4ebda] flex items-center justify-center text-[#0b3026] font-bold text-xs"><IconActivity className="w-4 h-4" /></div>
                       <div>
                         <h1 className="text-xs font-extrabold text-[#1A201C]">VitaTrack Health</h1>
-                        <span className="text-[9px] font-bold text-[#4b662b] block">Secured by TideCloak</span>
+                        <span className="text-[9px] font-bold text-[#4b662b] block">
+                          TideCloak • {tideSession.shortBadge}
+                        </span>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -2597,19 +3233,33 @@
                   </header>
 
                   <main className="flex-1 overflow-y-auto no-scrollbar px-4 pt-3.5 pb-24">
-                    {activeTab === 'dashboard' && <DashboardTab user={userProfile} onNavigate={setActiveTab} />}
+                    {activeTab === 'dashboard' && (
+                      <DashboardTab
+                        user={userProfile}
+                        onNavigate={setActiveTab}
+                        tideSession={tideSession}
+                        onSelectRole={handleSelectRole}
+                        onToggleEmergentAuthority={handleToggleEmergentAuthority}
+                      />
+                    )}
                     {activeTab === 'scanner' && (
                       <ScannerTab
                         currentRx={currentRx}
                         onUpdateRx={setCurrentRx}
                         onNavigate={setActiveTab}
                         onSaveSchedule={handleSaveSchedule}
+                        tideSession={tideSession}
+                        onSelectRole={handleSelectRole}
+                        onToggleEmergentAuthority={handleToggleEmergentAuthority}
                       />
                     )}
                     {activeTab === 'ai' && (
                       <AiAssistantTab
                         currentRx={currentRx}
                         onSaveSchedule={handleSaveSchedule}
+                        tideSession={tideSession}
+                        onSelectRole={handleSelectRole}
+                        onToggleEmergentAuthority={handleToggleEmergentAuthority}
                       />
                     )}
                     {activeTab === 'schedule' && <ScheduleTab schedule={schedule} onToggle={handleToggleSchedule} />}
@@ -2617,6 +3267,9 @@
                       <ProfileTab
                         user={userProfile}
                         onNavigate={setActiveTab}
+                        tideSession={tideSession}
+                        onSelectRole={handleSelectRole}
+                        onToggleEmergentAuthority={handleToggleEmergentAuthority}
                         onLogout={() => {
                           setAuthInitialMode('signin');
                           setScreenStage('auth');

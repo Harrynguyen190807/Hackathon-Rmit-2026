@@ -1,26 +1,54 @@
 import React, { useState } from 'react';
-import { ArrowRight, ArrowLeft, Eye, EyeOff, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import {
+  ArrowRight,
+  ArrowLeft,
+  Eye,
+  EyeOff,
+  ShieldCheck,
+  CheckCircle2,
+  KeyRound,
+} from 'lucide-react';
+import { TIDECLOAK_ROLES_CATALOG } from '../services/tidecloak';
 
-export default function AuthScreen({ onLoginSuccess, onBackToWelcome, initialMode = 'signin' }) {
+export default function AuthScreen({
+  onLoginSuccess,
+  onBackToWelcome,
+  initialMode = 'signin',
+  selectedRoleKey = 'patient',
+}) {
   const [mode, setMode] = useState(initialMode); // 'signin' | 'signup'
-  const [phone, setPhone] = useState('+1 929 391 82 81');
-  const [password, setPassword] = useState('••••••••');
-  const [fullName, setFullName] = useState('Michelle Nguyen');
-  const [email, setEmail] = useState('michelle.nguyen@vitatrack.health');
+  const [roleKey, setRoleKey] = useState(selectedRoleKey);
+  const activePersona = TIDECLOAK_ROLES_CATALOG[roleKey] || TIDECLOAK_ROLES_CATALOG.patient;
+
+  const [phone, setPhone] = useState(activePersona.phone);
+  const [password, setPassword] = useState('••••••••••••');
+  const [fullName, setFullName] = useState(activePersona.displayName);
+  const [email, setEmail] = useState(activePersona.email);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
+  const handleSelectRolePreset = (newRoleKey) => {
+    const persona = TIDECLOAK_ROLES_CATALOG[newRoleKey] || TIDECLOAK_ROLES_CATALOG.patient;
+    setRoleKey(newRoleKey);
+    setFullName(persona.displayName);
+    setPhone(persona.phone);
+    setEmail(persona.email);
+  };
+
   const handleSubmit = (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     setIsAuthenticating(true);
     setTimeout(() => {
       setIsAuthenticating(false);
       onLoginSuccess({
-        name: mode === 'signup' ? fullName : 'Michelle Nguyen',
+        roleKey,
+        name: mode === 'signup' ? fullName : activePersona.displayName,
         phone,
         email,
-        vitalId: 'VT-3311045090',
+        vitalId: activePersona.vitalId,
+        vuid: activePersona.vuid,
+        did: activePersona.did,
         streakDays: 75,
         badgesCount: 81,
         isPro: true,
@@ -29,7 +57,7 @@ export default function AuthScreen({ onLoginSuccess, onBackToWelcome, initialMod
   };
 
   return (
-    <div className="flex-1 flex flex-col justify-between bg-[#FCF9F3] text-[#1B2F27] px-7 pt-3 pb-4 overflow-y-auto no-scrollbar select-none relative">
+    <div className="flex-1 flex flex-col justify-between bg-[#FCF9F3] text-[#1B2F27] px-6 pt-2 pb-4 overflow-y-auto no-scrollbar select-none relative">
       {/* Top Back to Welcome link */}
       {onBackToWelcome && (
         <div className="flex items-center justify-between mb-1">
@@ -42,16 +70,16 @@ export default function AuthScreen({ onLoginSuccess, onBackToWelcome, initialMod
             <span>Welcome</span>
           </button>
           <span className="text-[10px] font-bold uppercase tracking-wider text-[#24473B] bg-[#E9F7DA] px-2.5 py-0.5 rounded-full">
-            VitaID Zero-Knowledge
+            TideCloak OIDC • Doken v2
           </span>
         </div>
       )}
 
       {/* Header & Branding Section matching Stitch Sign In */}
-      <section className="text-center mt-1 mb-2">
-        <div className="inline-flex items-center justify-center mb-3">
-          <div className="w-16 h-16 rounded-[22px] bg-gradient-to-br from-[#2D5A4A] to-[#19332A] shadow-md flex items-center justify-center p-1.5 relative border border-white/20">
-            <svg className="w-12 h-12" fill="none" viewBox="0 0 120 120">
+      <section className="text-center mt-0.5 mb-1.5">
+        <div className="inline-flex items-center justify-center mb-2">
+          <div className="w-14 h-14 rounded-[20px] bg-gradient-to-br from-[#2D5A4A] to-[#19332A] shadow-md flex items-center justify-center p-1.5 relative border border-white/20">
+            <svg className="w-10 h-10" fill="none" viewBox="0 0 120 120">
               <circle
                 cx="60"
                 cy="60"
@@ -81,22 +109,62 @@ export default function AuthScreen({ onLoginSuccess, onBackToWelcome, initialMod
           </div>
         </div>
 
-        <h1 className="text-[28px] font-extrabold text-[#1B2F27] tracking-tight mb-1">
-          {mode === 'signin' ? 'Sign In' : 'Create Account'}
+        <h1 className="text-[24px] font-extrabold text-[#1B2F27] tracking-tight">
+          {mode === 'signin' ? 'TideCloak Sign In' : 'Create Sovereign ID'}
         </h1>
-        <p className="text-xs text-[#687C74] font-medium tracking-wide">
+        <p className="text-[11.5px] text-[#687C74] font-medium">
           {mode === 'signin'
-            ? 'Personal Health Records & Prescriptions'
+            ? 'Simulate TideCloak IAM Role & Threshold Key Sign-In'
             : 'Initialize Sovereign TideCloak Health Passport'}
         </p>
       </section>
 
+      {/* TideCloak Simulated Role Preset Selector */}
+      <section className="rounded-2xl bg-white p-2.5 border border-[#E5E0D4] shadow-xs mb-2 space-y-1.5">
+        <div className="flex items-center justify-between px-1">
+          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#24473B] flex items-center gap-1">
+            <KeyRound className="w-3 h-3 text-[#4b662b]" />
+            Select TideCloak Role to Simulate:
+          </span>
+          <span className="text-[9.5px] font-mono text-[#687771]">
+            {activePersona.vuid.slice(0, 18)}...
+          </span>
+        </div>
+        <div className="grid grid-cols-3 gap-1.5">
+          {Object.values(TIDECLOAK_ROLES_CATALOG).map((r) => {
+            const isSelected = roleKey === r.key;
+            return (
+              <button
+                key={r.key}
+                type="button"
+                onClick={() => handleSelectRolePreset(r.key)}
+                className={`py-2 px-1.5 rounded-xl text-[10.5px] font-extrabold transition-all border text-center ${
+                  isSelected
+                    ? 'bg-[#0b3026] text-[#cceda3] border-[#0b3026] shadow-xs'
+                    : 'bg-[#FCF9F3] text-[#1B2F27] border-[#E5E0D4] hover:bg-[#f0eee8]'
+                }`}
+              >
+                {r.key === 'patient'
+                  ? '👤 Patient'
+                  : r.key === 'clinician'
+                  ? '🩺 Clinician'
+                  : '🛡️ SysAdmin'}
+              </button>
+            );
+          })}
+        </div>
+        <div className="px-1.5 py-1 rounded-xl bg-[#f6f3ed] text-[10px] text-[#52635D] leading-snug">
+          <span className="font-bold text-[#0b3026]">{activePersona.label}:</span>{' '}
+          {activePersona.description}
+        </div>
+      </section>
+
       {/* Form Section */}
-      <section className="w-full space-y-3.5 my-1">
-        <form onSubmit={handleSubmit} className="space-y-3.5">
+      <section className="w-full space-y-2.5 my-0.5">
+        <form onSubmit={handleSubmit} className="space-y-2.5">
           {mode === 'signup' && (
-            <div className="relative bg-white border-[1.5px] border-[#E5E0D4] focus-within:border-[#24473B] rounded-[20px] px-4 py-3 flex items-center justify-between transition-all shadow-sm">
-              <span className="absolute -top-[9px] left-[18px] px-1.5 bg-white text-[11px] font-semibold text-[#7A8983] rounded">
+            <div className="relative bg-white border-[1.5px] border-[#E5E0D4] focus-within:border-[#24473B] rounded-[18px] px-4 py-2.5 flex items-center justify-between transition-all shadow-xs">
+              <span className="absolute -top-[8px] left-[16px] px-1.5 bg-white text-[10px] font-semibold text-[#7A8983] rounded">
                 Full Name
               </span>
               <input
@@ -104,40 +172,34 @@ export default function AuthScreen({ onLoginSuccess, onBackToWelcome, initialMod
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="Michelle Nguyen"
-                className="w-full bg-transparent p-0 border-0 focus:ring-0 text-[#1B2F27] font-semibold text-[15px] outline-none"
+                className="w-full bg-transparent p-0 border-0 focus:ring-0 text-[#1B2F27] font-semibold text-[14px] outline-none"
                 required
               />
-              <CheckCircle2 className="w-5 h-5 text-[#24473B]/50 shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-[#24473B]/50 shrink-0" />
             </div>
           )}
 
-          {/* Field 1: Phone */}
-          <div className="relative bg-white border-[1.5px] border-[#E5E0D4] focus-within:border-[#24473B] rounded-[20px] px-4 py-3.5 flex items-center justify-between transition-all shadow-sm">
-            <span className="absolute -top-[9px] left-[18px] px-1.5 bg-white text-[11px] font-semibold text-[#7A8983] rounded">
-              Phone
+          {/* Field 1: Phone / Identity */}
+          <div className="relative bg-white border-[1.5px] border-[#E5E0D4] focus-within:border-[#24473B] rounded-[18px] px-4 py-2.5 flex items-center justify-between transition-all shadow-xs">
+            <span className="absolute -top-[8px] left-[16px] px-1.5 bg-white text-[10px] font-semibold text-[#7A8983] rounded">
+              TideCloak Identity / Phone
             </span>
             <input
               type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="+1 929 391 82 81"
-              className="w-full bg-transparent p-0 border-0 focus:ring-0 text-[#1B2F27] font-semibold text-[15px] tracking-wide outline-none"
+              className="w-full bg-transparent p-0 border-0 focus:ring-0 text-[#1B2F27] font-semibold text-[14px] tracking-wide outline-none"
               required
             />
-            <div className="text-[#24473B]/50 pr-0.5" title="VitaID Synced">
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  clipRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                  fillRule="evenodd"
-                />
-              </svg>
-            </div>
+            <span className="text-[10px] font-mono font-bold text-[#24473B] bg-[#E9F7DA] px-2 py-0.5 rounded-full shrink-0">
+              {activePersona.vitalId}
+            </span>
           </div>
 
           {mode === 'signup' && (
-            <div className="relative bg-white border-[1.5px] border-[#E5E0D4] focus-within:border-[#24473B] rounded-[20px] px-4 py-3 flex items-center justify-between transition-all shadow-sm">
-              <span className="absolute -top-[9px] left-[18px] px-1.5 bg-white text-[11px] font-semibold text-[#7A8983] rounded">
+            <div className="relative bg-white border-[1.5px] border-[#E5E0D4] focus-within:border-[#24473B] rounded-[18px] px-4 py-2.5 flex items-center justify-between transition-all shadow-xs">
+              <span className="absolute -top-[8px] left-[16px] px-1.5 bg-white text-[10px] font-semibold text-[#7A8983] rounded">
                 Clinical Email
               </span>
               <input
@@ -145,16 +207,16 @@ export default function AuthScreen({ onLoginSuccess, onBackToWelcome, initialMod
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="michelle@vitatrack.health"
-                className="w-full bg-transparent p-0 border-0 focus:ring-0 text-[#1B2F27] font-semibold text-[14px] outline-none"
+                className="w-full bg-transparent p-0 border-0 focus:ring-0 text-[#1B2F27] font-semibold text-[13.5px] outline-none"
                 required
               />
             </div>
           )}
 
-          {/* Field 2: Password */}
-          <div className="relative bg-white border-[1.5px] border-[#E5E0D4] focus-within:border-[#24473B] rounded-[20px] px-4 py-3.5 flex items-center justify-between transition-all shadow-sm">
-            <span className="absolute -top-[9px] left-[18px] px-1.5 bg-white text-[11px] font-semibold text-[#7A8983] rounded">
-              Password
+          {/* Field 2: Password / Passkey */}
+          <div className="relative bg-white border-[1.5px] border-[#E5E0D4] focus-within:border-[#24473B] rounded-[18px] px-4 py-2.5 flex items-center justify-between transition-all shadow-xs">
+            <span className="absolute -top-[8px] left-[16px] px-1.5 bg-white text-[10px] font-semibold text-[#7A8983] rounded">
+              Zero-Knowledge Passphrase
             </span>
             <div className="flex-1 mr-2 flex items-center">
               <input
@@ -162,7 +224,7 @@ export default function AuthScreen({ onLoginSuccess, onBackToWelcome, initialMod
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-transparent p-0 border-0 focus:ring-0 text-[#1B2F27] font-extrabold text-base tracking-widest outline-none"
+                className="w-full bg-transparent p-0 border-0 focus:ring-0 text-[#1B2F27] font-extrabold text-sm tracking-widest outline-none"
                 required
               />
               <button
@@ -174,18 +236,14 @@ export default function AuthScreen({ onLoginSuccess, onBackToWelcome, initialMod
               </button>
             </div>
             {mode === 'signin' && (
-              <button
-                type="button"
-                onClick={() => alert('Zero-Knowledge recovery key sent to your verified device.')}
-                className="text-xs font-semibold text-[#667E74] hover:text-[#24473B] transition-colors whitespace-nowrap pl-1"
-              >
-                Forgot password?
-              </button>
+              <span className="text-[10px] font-mono text-[#4b662b] font-bold whitespace-nowrap pl-1">
+                5/7 ORK QUORUM
+              </span>
             )}
           </div>
 
           {/* Remember me checkbox */}
-          <div className="flex items-center justify-between px-1.5 pt-0.5 pb-1">
+          <div className="flex items-center justify-between px-1.5 pt-0.5">
             <label className="flex items-center cursor-pointer space-x-2">
               <input
                 type="checkbox"
@@ -194,9 +252,7 @@ export default function AuthScreen({ onLoginSuccess, onBackToWelcome, initialMod
                 className="w-4 h-4 rounded accent-[#24473B] border-[#D2CBBF]"
               />
               <span className="text-xs font-medium text-[#5F736B]">
-                {mode === 'signin'
-                  ? 'Remember me on this device'
-                  : 'Activate TideCloak Emergent Authority Key'}
+                Issue TideCloak Doken with `{activePersona.realmRoles[0]}` role
               </span>
             </label>
           </div>
@@ -205,13 +261,19 @@ export default function AuthScreen({ onLoginSuccess, onBackToWelcome, initialMod
           <button
             type="submit"
             disabled={isAuthenticating}
-            className="w-full py-4 px-6 rounded-full bg-gradient-to-r from-[#24473B] to-[#1A362C] text-white font-bold text-sm tracking-wider uppercase shadow-[0_10px_25px_-5px_rgba(36,71,59,0.35)] hover:brightness-105 active:scale-[0.985] transition-all duration-200 flex items-center justify-center space-x-2"
+            className="w-full py-3.5 px-6 rounded-full bg-gradient-to-r from-[#24473B] to-[#1A362C] text-white font-bold text-xs tracking-wider uppercase shadow-[0_10px_25px_-5px_rgba(36,71,59,0.35)] hover:brightness-105 active:scale-[0.985] transition-all duration-200 flex items-center justify-center space-x-2"
           >
             {isAuthenticating ? (
-              <span className="animate-pulse">VERIFYING VITA-ID...</span>
+              <span className="animate-pulse">
+                ATTESTING 5-OF-7 TIDE ORK NODES ({activePersona.shortBadge})...
+              </span>
             ) : (
               <>
-                <span>{mode === 'signin' ? 'SIGN IN' : 'CREATE ACCOUNT'}</span>
+                <span>
+                  {mode === 'signin'
+                    ? `SIGN IN AS ${activePersona.key.toUpperCase().replace('_', ' ')}`
+                    : 'CREATE TIDECLOAK PASSPORT'}
+                </span>
                 <ArrowRight className="w-4 h-4 text-white" />
               </>
             )}
@@ -219,7 +281,7 @@ export default function AuthScreen({ onLoginSuccess, onBackToWelcome, initialMod
         </form>
 
         {/* Don't have an account link */}
-        <div className="text-center pt-1.5">
+        <div className="text-center pt-1">
           <p className="text-xs text-[#52635D]">
             {mode === 'signin' ? "Don't have an account? " : 'Already have an account? '}
             <button
@@ -233,62 +295,11 @@ export default function AuthScreen({ onLoginSuccess, onBackToWelcome, initialMod
         </div>
       </section>
 
-      {/* Social Logins Section */}
-      <section className="w-full mt-2 mb-1">
-        <div className="relative flex items-center justify-center mb-3.5">
-          <div className="w-full border-t border-[#E3DDD1]"></div>
-          <span className="absolute px-3 bg-[#FCF9F3] text-[11.5px] font-medium text-[#7C8F87]">
-            Or sign in with:
-          </span>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3.5">
-          {/* Facebook Button */}
-          <button
-            type="button"
-            onClick={handleSubmit}
-            aria-label="Sign in with Facebook"
-            className="h-12 flex items-center justify-center rounded-full bg-white border border-[#DDD6C8] hover:border-[#24473B]/40 hover:bg-[#FAF7F1] shadow-sm active:scale-95 transition-all duration-150"
-          >
-            <svg className="w-5 h-5 text-[#1877F2] fill-current" viewBox="0 0 24 24">
-              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-            </svg>
-          </button>
-
-          {/* Google Button */}
-          <button
-            type="button"
-            onClick={handleSubmit}
-            aria-label="Sign in with Google"
-            className="h-12 flex items-center justify-center rounded-full bg-white border border-[#DDD6C8] hover:border-[#24473B]/40 hover:bg-[#FAF7F1] shadow-sm active:scale-95 transition-all duration-150"
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24">
-              <path
-                d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.67v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.16z"
-                fill="#4285F4"
-              />
-              <path
-                d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.94H1.24v3.15C3.26 21.36 7.33 24 12 24z"
-                fill="#34A853"
-              />
-              <path
-                d="M5.28 14.26c-.25-.72-.38-1.49-.38-2.26s.13-1.54.38-2.26V6.59H1.24C.45 8.2 0 10.04 0 12s.45 3.8 1.24 5.41l4.04-3.15z"
-                fill="#FBBC05"
-              />
-              <path
-                d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.24 6.59l4.04 3.15c.95-2.84 3.6-4.99 6.72-4.99z"
-                fill="#EA4335"
-              />
-            </svg>
-          </button>
-        </div>
-      </section>
-
       {/* Medical Trust Badge Footer */}
-      <footer className="mt-2 text-center">
-        <div className="inline-flex items-center space-x-1.5 text-[10.5px] font-semibold text-[#5A6F66] bg-[#ECE6D9]/60 px-3 py-1 rounded-full">
+      <footer className="mt-1 text-center">
+        <div className="inline-flex items-center space-x-1.5 text-[10px] font-semibold text-[#5A6F66] bg-[#ECE6D9]/60 px-3 py-1 rounded-full">
           <ShieldCheck className="w-3.5 h-3.5 text-[#24473B]" />
-          <span>HIPAA Encrypted Medical Security • VitaID</span>
+          <span>Protected by TideCloak IAM • BLS12-381 Threshold Doken</span>
         </div>
       </footer>
     </div>

@@ -39,6 +39,9 @@ const QUICK_SUGGESTIONS = [
 export default function AiAssistantTab({
   prescription = SYNTHETIC_PATIENT_VAULT.presetPrescriptions.standardCardioRx,
   initialEdgeProof,
+  tideSession,
+  onSelectRole,
+  onToggleEmergentAuthority,
   onSyncReminders,
 }) {
   const [inputVal, setInputVal] = useState('');
@@ -97,7 +100,12 @@ export default function AiAssistantTab({
     if (!customQuery) setInputVal('');
 
     setTimeout(() => {
-      const result = processZeroTrustAiQuery(queryText, prescription, onSyncReminders);
+      const result = processZeroTrustAiQuery(
+        queryText,
+        prescription,
+        onSyncReminders,
+        tideSession
+      );
       setLatestProof(result.edgeProof);
       const aiMsg = {
         id: 'ai-' + Date.now(),
@@ -144,7 +152,10 @@ export default function AiAssistantTab({
       {/* Prominent TideCloak Verification Banner */}
       <TideCloakBadge
         proofData={latestProof}
-        contextLabel="Zero-Knowledge Proof Verified • Anonymous AI Context"
+        session={tideSession}
+        onSelectRole={onSelectRole}
+        onToggleEmergentAuthority={onToggleEmergentAuthority}
+        contextLabel="Zero-Knowledge Proof Verified • hasClientRole('ai:consult')"
       />
 
       {/* Active Contextual Memory Pill */}

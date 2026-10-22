@@ -12,15 +12,31 @@ import {
   ShieldCheck,
   Plus,
   TrendingUp,
+  Lock,
 } from 'lucide-react';
 import TideCloakBadge from './TideCloakBadge';
-import { SYNTHETIC_PATIENT_VAULT } from '../services/tidecloak';
+import { SYNTHETIC_PATIENT_VAULT, hasClientRole } from '../services/tidecloak';
 
 export default function DashboardTab({
   biometrics = SYNTHETIC_PATIENT_VAULT.biometrics,
   edgeProof,
+  tideSession,
+  onSelectRole,
+  onToggleEmergentAuthority,
   onNavigate,
 }) {
+  const canDecryptBiometrics =
+    !tideSession ||
+    hasClientRole(tideSession, '_tide_biometrics.decrypt') ||
+    hasClientRole(tideSession, '_tide_biometrics.selfencrypt');
+
+  const firstName = (tideSession?.displayName || 'Michelle Nguyen').split(' ')[0];
+  const initials = (tideSession?.displayName || 'Michelle Nguyen')
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .slice(0, 2);
+
   return (
     <div className="flex flex-col w-full gap-y-4 pb-6">
       {/* Top Greeting & Profile Bar (From Stitch Dashboard) */}
@@ -32,7 +48,7 @@ export default function DashboardTab({
           <div className="relative">
             <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-[#24473b] to-[#8fb5a5] p-0.5 shadow-sm">
               <div className="w-full h-full rounded-full bg-[#F5EFE4] flex items-center justify-center text-[#0b3026] font-extrabold text-base">
-                MN
+                {initials}
               </div>
             </div>
             <span className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-[#cceda3] ring-2 ring-[#FBF8F2]" />
@@ -40,17 +56,25 @@ export default function DashboardTab({
           <div className="flex flex-col">
             <div className="flex items-center gap-1.5">
               <span className="text-lg font-bold text-[#1A201C] tracking-tight">
-                Hey, Michelle
+                Hey, {firstName}
               </span>
               <span className="text-base select-none">👋</span>
             </div>
             <div className="flex items-center gap-1.5 mt-0.5">
               <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-[#c7e89e]/70 text-[#0b3026] text-xs font-bold">
-                <Plus className="w-3 h-3 stroke-[2.5]" /> {biometrics.asclepiosScore}%
+                {canDecryptBiometrics ? (
+                  <>
+                    <Plus className="w-3 h-3 stroke-[2.5]" /> {biometrics.asclepiosScore}%
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-3 h-3" /> E2EE
+                  </>
+                )}
               </span>
               <span className="text-[#687771] text-xs">•</span>
               <span className="text-xs font-medium text-[#4b662b] flex items-center gap-1">
-                <ShieldCheck className="w-3.5 h-3.5" /> Sovereign Vault
+                <ShieldCheck className="w-3.5 h-3.5" /> {tideSession?.shortBadge || 'Sovereign Vault'}
               </span>
             </div>
           </div>
@@ -68,8 +92,38 @@ export default function DashboardTab({
       {/* TideCloak Sovereign Telemetry Badge */}
       <TideCloakBadge
         proofData={edgeProof}
-        contextLabel="Biometric Telemetry Encrypted on Device"
+        session={tideSession}
+        onSelectRole={onSelectRole}
+        onToggleEmergentAuthority={onToggleEmergentAuthority}
+        contextLabel="Biometric Telemetry Protected by _tide_biometrics"
       />
+
+      {!canDecryptBiometrics && (
+        <div className="rounded-2xl bg-[#ffdad6] text-[#93000a] p-3.5 border border-[#ba1a1a]/30 text-xs space-y-1.5">
+          <div className="flex items-center justify-between font-extrabold">
+            <span className="flex items-center gap-1.5">
+              <Lock className="w-4 h-4" />
+              TideCloak `doDecrypt` Guard Active
+            </span>
+            <span className="text-[9.5px] px-2 py-0.5 rounded bg-white/80 uppercase">
+              HTTP 403 • ZERO-KEY ADMIN
+            </span>
+          </div>
+          <p className="leading-relaxed">
+            Signed in as <strong>{tideSession?.roleLabel}</strong>. Because your Doken lacks{' '}
+            <code>_tide_biometrics.decrypt</code>, biometric values below remain encrypted at rest.
+          </p>
+          {onSelectRole && (
+            <button
+              type="button"
+              onClick={() => onSelectRole('patient')}
+              className="mt-1 px-3 py-1 rounded-full bg-[#0b3026] text-[#cceda3] text-[10.5px] font-bold"
+            >
+              Switch to Patient Role to Decrypt &rarr;
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Search Input Bar (Stitch Design) */}
       <div className="relative w-full">
@@ -130,12 +184,14 @@ export default function DashboardTab({
               Asclepios Score
             </span>
             <p className="text-xs text-[#687771] mt-1 leading-relaxed">
-              Based on your continuous daily biometrics, your cardiovascular stability and sleep recovery are optimal.
+              {canDecryptBiometrics
+                ? 'Based on your continuous daily biometrics, your cardiovascular stability and sleep recovery are optimal.'
+                : 'TIDE_CIPHER[biometrics]:0x9f4a82c1... Encrypted via Tide Threshold Prism.'}
             </p>
             <div className="mt-3 inline-flex items-center gap-1.5 self-start px-2.5 py-1 rounded-full bg-[#f6f3ed] text-[#0b3026]">
               <span className="w-2 h-2 rounded-full bg-[#4b662b]" />
               <span className="text-[11px] font-bold uppercase tracking-wider text-[#4b662b]">
-                Optimal Vitality
+                {canDecryptBiometrics ? 'Optimal Vitality' : 'Locked by _tide_biometrics'}
               </span>
             </div>
           </div>
@@ -145,7 +201,7 @@ export default function DashboardTab({
             <span className="text-xs text-[#687771]/50 select-none font-semibold">87</span>
             <div className="w-14 h-12 rounded-2xl bg-[#cceda3] flex items-center justify-center shadow-[0_4px_12px_rgba(177,209,137,0.45)]">
               <span className="text-2xl font-extrabold text-[#0b3026]">
-                {biometrics.asclepiosScore}
+                {canDecryptBiometrics ? biometrics.asclepiosScore : '🔒'}
               </span>
             </div>
             <span className="text-xs text-[#687771]/50 select-none font-semibold">89</span>
@@ -175,7 +231,7 @@ export default function DashboardTab({
                 <Heart className="w-4 h-4 fill-[#0b3026]" />
               </div>
               <span className="px-2 py-0.5 rounded-full bg-[#f6f3ed] text-[#4b662b] text-[10px] font-bold uppercase tracking-wider">
-                {biometrics.heartRate.status}
+                {canDecryptBiometrics ? biometrics.heartRate.status : 'LOCKED'}
               </span>
             </div>
 
@@ -199,7 +255,7 @@ export default function DashboardTab({
 
             <div className="flex items-baseline gap-1 mt-1 z-10">
               <span className="text-2xl font-extrabold text-[#1A201C]">
-                {biometrics.heartRate.value}
+                {canDecryptBiometrics ? biometrics.heartRate.value : '•••'}
               </span>
               <span className="text-xs font-medium text-[#687771]">
                 {biometrics.heartRate.unit}
@@ -214,7 +270,7 @@ export default function DashboardTab({
                 <Activity className="w-4 h-4" />
               </div>
               <span className="px-2 py-0.5 rounded-full bg-[#F3A871]/20 text-[#663304] text-[10px] font-bold uppercase tracking-wider">
-                {biometrics.bloodPressure.status}
+                {canDecryptBiometrics ? biometrics.bloodPressure.status : 'LOCKED'}
               </span>
             </div>
 
@@ -237,7 +293,9 @@ export default function DashboardTab({
 
             <div className="flex items-baseline gap-1 mt-1 z-10">
               <span className="text-2xl font-extrabold text-[#1A201C]">
-                {biometrics.bloodPressure.systolic}/{biometrics.bloodPressure.diastolic}
+                {canDecryptBiometrics
+                  ? `${biometrics.bloodPressure.systolic}/${biometrics.bloodPressure.diastolic}`
+                  : '•••/••'}
               </span>
               <span className="text-xs font-medium text-[#687771]">
                 {biometrics.bloodPressure.unit}
@@ -262,13 +320,13 @@ export default function DashboardTab({
         </div>
         <div className="flex flex-col items-end">
           <span className="text-xl font-extrabold text-[#1A201C]">
-            {biometrics.calories.burned}{' '}
+            {canDecryptBiometrics ? biometrics.calories.burned : '••••'}{' '}
             <span className="text-xs font-normal text-[#687771]">kcal</span>
           </span>
           <div className="w-24 h-2 rounded-full bg-[#f0eee8] mt-1.5 overflow-hidden">
             <div
               className="h-full bg-[#b1d189] rounded-full transition-all duration-500"
-              style={{ width: `${biometrics.calories.progress}%` }}
+              style={{ width: `${canDecryptBiometrics ? biometrics.calories.progress : 15}%` }}
             />
           </div>
         </div>
@@ -283,12 +341,14 @@ export default function DashboardTab({
           <div className="flex flex-col">
             <span className="text-sm font-bold text-[#0b3026]">Sleep Quality</span>
             <span className="text-xs text-[#0b3026]/80 font-medium">
-              {biometrics.sleep.totalHours} hrs • REM {biometrics.sleep.remHours} hrs
+              {canDecryptBiometrics
+                ? `${biometrics.sleep.totalHours} hrs • REM ${biometrics.sleep.remHours} hrs`
+                : 'TIDE_CIPHER[biometrics] Locked'}
             </span>
           </div>
         </div>
         <span className="px-3 py-1 rounded-full bg-[#0b3026] text-white text-[11px] font-bold uppercase tracking-wider">
-          {biometrics.sleep.status}
+          {canDecryptBiometrics ? biometrics.sleep.status : 'ENCRYPTED'}
         </span>
       </div>
     </div>

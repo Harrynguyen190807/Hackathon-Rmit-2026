@@ -20,6 +20,8 @@ import AuthScreen from './components/AuthScreen';
 import WelcomeScreen from './components/WelcomeScreen';
 import {
   getTideCloakStatus,
+  createTideCloakSession,
+  TIDECLOAK_ROLES_CATALOG,
   SYNTHETIC_PATIENT_VAULT,
   encryptHealthPayloadAtEdge,
 } from './services/tidecloak';
@@ -29,6 +31,14 @@ export default function App() {
   // 'welcome' | 'auth' | 'app'
   const [screenStage, setScreenStage] = useState('welcome');
   const [authInitialMode, setAuthInitialMode] = useState('signin');
+
+  // Simulated TideCloak IAM Session State (Roles + Emergent Authority)
+  const [activeRoleKey, setActiveRoleKey] = useState('patient');
+  const [emergentAuthorityGranted, setEmergentAuthorityGranted] = useState(false);
+
+  const tideSession = createTideCloakSession(activeRoleKey, emergentAuthorityGranted);
+  const tideStatus = getTideCloakStatus(tideSession);
+
   const [userProfile, setUserProfile] = useState({
     name: 'Michelle Nguyen',
     phone: '+1 929 391 82 81',
@@ -38,6 +48,22 @@ export default function App() {
     badgesCount: 81,
     isPro: true,
   });
+
+  const handleSelectRole = (nextRoleKey) => {
+    const persona = TIDECLOAK_ROLES_CATALOG[nextRoleKey] || TIDECLOAK_ROLES_CATALOG.patient;
+    setActiveRoleKey(nextRoleKey);
+    setUserProfile((prev) => ({
+      ...prev,
+      name: persona.displayName,
+      phone: persona.phone,
+      email: persona.email,
+      vitalId: persona.vitalId,
+    }));
+  };
+
+  const handleToggleEmergentAuthority = () => {
+    setEmergentAuthorityGranted((prev) => !prev);
+  };
 
   // Persistent Prescription & Schedule Memory across Scanner, AI Health Assistant, and Trends
   const [activeRxKey, setActiveRxKey] = useState('standardCardioRx');
@@ -87,7 +113,6 @@ export default function App() {
     },
   ]);
 
-  const [tideStatus] = useState(() => getTideCloakStatus());
   const [currentTime, setCurrentTime] = useState('09:41');
 
   useEffect(() => {
@@ -134,7 +159,11 @@ export default function App() {
     );
   };
 
-  const edgeProof = encryptHealthPayloadAtEdge('PRESCRIPTION_SESSION', activePrescription);
+  const edgeProof = encryptHealthPayloadAtEdge(
+    'PRESCRIPTION_SESSION',
+    activePrescription,
+    tideSession
+  );
 
   const navItems = [
     { id: 'dashboard', label: 'Home', icon: LayoutGrid },
@@ -152,10 +181,10 @@ export default function App() {
       <div className="pointer-events-none fixed -top-32 -left-32 w-96 h-96 rounded-full bg-emerald-500/10 blur-[120px]" />
       <div className="pointer-events-none fixed -bottom-32 -right-32 w-96 h-96 rounded-full bg-teal-500/10 blur-[120px]" />
 
-      {/* Top Desktop Hackathon Banner + Stage Switcher (100% English) */}
-      <div className="hidden sm:flex items-center gap-2 mb-3 px-3.5 py-1.5 rounded-full bg-[#111C18]/90 border border-emerald-500/25 text-xs text-emerald-300 shadow-lg backdrop-blur-md">
+      {/* Top Desktop Hackathon Banner + Stage & TideCloak Role Switcher (100% English) */}
+      <div className="hidden sm:flex items-center gap-2 mb-3 px-3.5 py-1.5 rounded-full bg-[#111C18]/90 border border-emerald-500/25 text-xs text-emerald-300 shadow-lg backdrop-blur-md flex-wrap justify-center">
         <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-        <span className="font-semibold tracking-wide">VitaTrack Health</span>
+        <span className="font-semibold tracking-wide">VitaTrack • TideCloak Protected</span>
         <span className="text-emerald-500/40">|</span>
         <div className="flex items-center gap-1">
           <button
@@ -181,7 +210,7 @@ export default function App() {
                 : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300'
             }`}
           >
-            🔑 2. Sign In
+            🔑 2. TideCloak Sign In
           </button>
           <button
             type="button"
@@ -194,6 +223,30 @@ export default function App() {
           >
             📱 3. Main App
           </button>
+        </div>
+        <span className="text-emerald-500/40">|</span>
+        <div className="flex items-center gap-1">
+          {Object.values(TIDECLOAK_ROLES_CATALOG).map((r) => (
+            <button
+              key={r.key}
+              type="button"
+              onClick={() => {
+                handleSelectRole(r.key);
+                setScreenStage('app');
+              }}
+              className={`px-2 py-0.5 rounded-full font-bold transition-all text-[10.5px] ${
+                activeRoleKey === r.key
+                  ? 'bg-[#cceda3] text-[#0b3026]'
+                  : 'bg-white/5 hover:bg-white/15 text-emerald-200'
+              }`}
+            >
+              {r.key === 'patient'
+                ? '👤 Patient'
+                : r.key === 'clinician'
+                ? '🩺 Clinician'
+                : '🛡️ SysAdmin'}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -208,10 +261,10 @@ export default function App() {
         {/* iOS / Mobile Status Bar */}
         <div className="px-7 pt-3 pb-2 flex items-center justify-between text-xs font-semibold select-none shrink-0 bg-[#FCF9F3] text-[#16231E]">
           <span className="tracking-wider font-bold text-[14px]">{currentTime}</span>
-          <div className="w-24 h-4 rounded-full bg-black/90 border border-white/10 flex items-center justify-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-[9px] text-emerald-300 font-mono uppercase tracking-tighter">
-              ZKP-ACTIVE
+          <div className="w-28 h-4 rounded-full bg-black/90 border border-white/10 flex items-center justify-center gap-1.5 px-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+            <span className="text-[8.5px] text-emerald-300 font-mono uppercase tracking-tighter truncate">
+              {tideSession.shortBadge}
             </span>
           </div>
           <div className="flex items-center gap-1.5">
@@ -235,10 +288,14 @@ export default function App() {
 
         {screenStage === 'auth' && (
           <AuthScreen
-            key={authInitialMode}
+            key={`${authInitialMode}-${activeRoleKey}`}
             initialMode={authInitialMode}
+            selectedRoleKey={activeRoleKey}
             onBackToWelcome={() => setScreenStage('welcome')}
             onLoginSuccess={(userData) => {
+              if (userData?.roleKey) {
+                setActiveRoleKey(userData.roleKey);
+              }
               setUserProfile((prev) => ({ ...prev, ...userData }));
               setScreenStage('app');
             }}
@@ -266,26 +323,28 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Right Controls: TideCloak Status Pill + Avatar */}
+              {/* Right Controls: TideCloak Role Status Pill + Avatar */}
               <div className="flex items-center gap-2">
-                <div
-                  title={`DID: ${tideStatus.did}`}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-[#0b3026] text-[10px] font-bold text-[#cceda3] shadow-sm"
-                >
-                  <Lock className="w-3 h-3 text-[#cceda3] shrink-0" />
-                  <span>TideCloak</span>
-                </div>
                 <button
                   type="button"
                   onClick={() => setActiveTab('profile')}
-                  title="Account Profile"
+                  title={`vuid: ${tideStatus.vuid}`}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-[#0b3026] text-[10px] font-bold text-[#cceda3] shadow-sm hover:opacity-90 transition-opacity"
+                >
+                  <Lock className="w-3 h-3 text-[#cceda3] shrink-0" />
+                  <span>{tideSession.shortBadge}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('profile')}
+                  title="Account Profile & TideCloak Roles"
                   className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-extrabold transition-all border ${
                     activeTab === 'profile'
                       ? 'bg-[#cceda3] text-[#0b3026] border-[#0b3026]'
                       : 'bg-[#F5EFE4] text-[#0b3026] border-[#ECE7DC] hover:border-[#0b3026]'
                   }`}
                 >
-                  {userProfile.name
+                  {(tideSession.displayName || userProfile.name)
                     .split(' ')
                     .map((n) => n[0])
                     .join('')
@@ -300,6 +359,9 @@ export default function App() {
                 <DashboardTab
                   biometrics={SYNTHETIC_PATIENT_VAULT.biometrics}
                   edgeProof={edgeProof}
+                  tideSession={tideSession}
+                  onSelectRole={handleSelectRole}
+                  onToggleEmergentAuthority={handleToggleEmergentAuthority}
                   onNavigate={setActiveTab}
                 />
               )}
@@ -312,6 +374,9 @@ export default function App() {
                   }}
                   prescription={activePrescription}
                   edgeProof={edgeProof}
+                  tideSession={tideSession}
+                  onSelectRole={handleSelectRole}
+                  onToggleEmergentAuthority={handleToggleEmergentAuthority}
                   onSaveToSchedule={handleSaveToSchedule}
                   onUpdateCustomRx={(parsed) => setCustomRx(parsed)}
                   onNavigate={setActiveTab}
@@ -321,6 +386,9 @@ export default function App() {
                 <AiAssistantTab
                   prescription={activePrescription}
                   initialEdgeProof={edgeProof}
+                  tideSession={tideSession}
+                  onSelectRole={handleSelectRole}
+                  onToggleEmergentAuthority={handleToggleEmergentAuthority}
                   onSyncReminders={handleSaveToSchedule}
                 />
               )}
@@ -333,6 +401,9 @@ export default function App() {
               {activeTab === 'profile' && (
                 <ProfileTab
                   user={userProfile}
+                  tideSession={tideSession}
+                  onSelectRole={handleSelectRole}
+                  onToggleEmergentAuthority={handleToggleEmergentAuthority}
                   onLogout={() => {
                     setAuthInitialMode('signin');
                     setScreenStage('auth');

@@ -1,13 +1,125 @@
 /**
- * TideCloak Zero-Trust Privacy, Edge Encryption & AI Clinical Assistant Engine
- * ----------------------------------------------------------------------------
- * Implements client-side cryptographic envelope generation, PII redaction,
- * Zero-Knowledge Proof (ZKP) verification, and context-aware AI Health Assistant logic.
+ * TideCloak Zero-Trust IAM, Tag-Based Encryption & Access Control Engine
+ * ----------------------------------------------------------------------
+ * Models @tidecloak/js (IAMService) & @tidecloak/react (useTideCloak):
+ *  - Simulated TideCloak OIDC / Doken Sign-In (patient, clinician, ignorant_admin)
+ *  - Role checks: hasRealmRole(role), hasClientRole(role, clientId)
+ *  - Tag-based client-side E2EE: doEncrypt([{ data, tags }]), doDecrypt([{ encrypted, tags }])
+ *  - Emergent Authority: Patient-controlled quorum delegation to Clinicians
+ *  - Ignorant Admin enforcement: Cloud/DB admins hold 0 decryption capabilities
  */
 
-const TIDECLOAK_REALM = 'vitatrack-sovereign-health.tidecloak.org';
-const ENCRYPTION_ALGO = 'AES-256-GCM + Tide-MPC-Threshold-Split';
-const ZKP_PROTOCOL = 'Groth16 / TideCloak-ZK-SNARK-v2';
+export const TIDECLOAK_REALM = 'vitatrack-sovereign-health';
+export const TIDECLOAK_CLIENT_ID = 'vitatrack-client';
+const ENCRYPTION_ALGO = 'AES-256-GCM + Tide-MPC-BLS12-381';
+const ZKP_PROTOCOL = 'Groth16 / TideCloak-Doken-v2';
+
+/**
+ * Architectural Plan: Where TideCloak Fits Across VitaTrack Health
+ */
+export const TIDECLOAK_ARCHITECTURE_PLAN = [
+  {
+    layer: '1. Authentication & Neon Enclave Sign-In',
+    sdkMethod: 'IAMService.login() / useTideCloak()',
+    description:
+      'Authenticates users via Tide Cybersecurity Fabric (Prism/Ork threshold nodes) without storing password hashes on any central server. Issues a signed JWT + Doken containing a privacy-preserving vuid.',
+  },
+  {
+    layer: '2. Realm & Client Role Guards (RBAC)',
+    sdkMethod: 'hasRealmRole() & hasClientRole()',
+    description:
+      'Inspects realm_access.roles (patient, clinician, tide-realm-admin) and resource_access["vitatrack-client"].roles to gate UI tabs, prescription scanning, and clinical report exports.',
+  },
+  {
+    layer: '3. Tag-Based End-to-End Encryption (E2EE)',
+    sdkMethod: 'doEncrypt() & doDecrypt()',
+    description:
+      'Encrypts sensitive medical tags ("prescriptions", "allergies", "diagnoses", "biometrics") at the browser edge. Decryption requires matching _tide_<tag>.selfencrypt or _tide_<tag>.decrypt roles in the user Doken.',
+  },
+  {
+    layer: '4. Emergent Authority & Ignorant Admin',
+    sdkMethod: 'Grant Clinician Quorum / Zero-Key Admin',
+    description:
+      'Clinicians cannot read locked allergies/diagnoses until the Patient explicitly co-signs a temporary 15-minute Emergent Authority grant. System admins ("Ignorant Admins") never receive decryption roles.',
+  },
+];
+
+/**
+ * Simulated TideCloak Roles & Personas for Interactive Testing
+ */
+export const TIDECLOAK_ROLES_CATALOG = {
+  patient: {
+    key: 'patient',
+    label: 'Patient (Sovereign Owner)',
+    shortBadge: 'ROLE: PATIENT',
+    displayName: 'Michelle Nguyen',
+    email: 'michelle.nguyen@vitatrack.health',
+    phone: '+1 929 391 82 81',
+    vitalId: 'VT-3311045090',
+    vuid: 'vuid:tide:0x9f8c74a1e204b8d03e1b44a0',
+    did: 'did:tide:zk:0x9f8c...3e1b44a0',
+    realmRoles: ['patient', 'sovereign_data_owner', 'offline_access'],
+    baseClientRoles: [
+      '_tide_prescriptions.selfencrypt',
+      '_tide_prescriptions.decrypt',
+      '_tide_allergies.selfencrypt',
+      '_tide_allergies.decrypt',
+      '_tide_diagnoses.selfencrypt',
+      '_tide_diagnoses.decrypt',
+      '_tide_biometrics.selfencrypt',
+      '_tide_biometrics.decrypt',
+      'rx:scan',
+      'rx:write',
+      'ai:consult',
+      'schedule:manage',
+      'authority:grant',
+      'audit:export',
+    ],
+    description:
+      'Full sovereign owner of personal health tags. Can encrypt/decrypt all medical records and grant temporary Emergent Authority to clinicians.',
+  },
+  clinician: {
+    key: 'clinician',
+    label: 'Clinician (Attending MD)',
+    shortBadge: 'ROLE: CLINICIAN',
+    displayName: 'Dr. Marcus Vance, MD',
+    email: 'dr.vance@cardio-clinic.org',
+    phone: '+1 212 555 0194',
+    vitalId: 'MD-NPI-4491028',
+    vuid: 'vuid:tide:0x4b12e98c77a10d22f09c11b8',
+    did: 'did:tide:zk:0x4b12...f09c11b8',
+    realmRoles: ['clinician', 'verified_physician'],
+    baseClientRoles: [
+      '_tide_prescriptions.decrypt',
+      '_tide_biometrics.decrypt',
+      'rx:scan',
+      'rx:verify',
+      'ai:consult',
+    ],
+    emergentClientRoles: [
+      '_tide_allergies.decrypt',
+      '_tide_diagnoses.decrypt',
+      'audit:export',
+    ],
+    description:
+      'Can review prescriptions and consult AI, but CANNOT decrypt [_tide_allergies] or [_tide_diagnoses] unless the Patient grants Emergent Authority.',
+  },
+  ignorant_admin: {
+    key: 'ignorant_admin',
+    label: 'Ignorant Admin (SysAdmin)',
+    shortBadge: 'ROLE: IGNORANT ADMIN',
+    displayName: 'Alex Mercer (Cloud Ops)',
+    email: 'sysadmin@vitatrack-cloud.io',
+    phone: '+1 415 890 4410',
+    vitalId: 'ADM-OPS-0001',
+    vuid: 'vuid:tide:0x00a1f773c91044e8b11099d2',
+    did: 'did:tide:zk:0x00a1...b11099d2',
+    realmRoles: ['tide-realm-admin', 'infra_operator'],
+    baseClientRoles: ['system:health', 'audit:logs_metadata'],
+    description:
+      'TideCloak "Ignorant Admin": Manages servers and uptime, but holds ZERO _tide_<tag>.decrypt roles. All patient health data remains opaque ciphertext.',
+  },
+};
 
 /**
  * Official System Prompt for the Upgraded AI Health Assistant
@@ -29,7 +141,7 @@ CORE RESPONSIBILITIES:
 /**
  * Generates a deterministic cryptographic hex digest for inspection
  */
-function generateHexHash(seedString, length = 32) {
+export function generateHexHash(seedString, length = 32) {
   let h1 = 0xdeadbeef ^ seedString.length;
   let h2 = 0x41c6ce57 ^ seedString.length;
   for (let i = 0; i < seedString.length; i++) {
@@ -48,13 +160,198 @@ function generateHexHash(seedString, length = 32) {
 }
 
 /**
+ * Creates a simulated TideCloak authenticated session & decoded JWT / Doken
+ */
+export function createTideCloakSession(roleKey = 'patient', emergentAuthorityGranted = false) {
+  const persona = TIDECLOAK_ROLES_CATALOG[roleKey] || TIDECLOAK_ROLES_CATALOG.patient;
+  const activeClientRoles = [
+    ...persona.baseClientRoles,
+    ...(roleKey === 'clinician' && emergentAuthorityGranted
+      ? persona.emergentClientRoles || []
+      : []),
+  ];
+
+  const nowSec = Math.floor(Date.now() / 1000);
+  const decodedToken = {
+    iss: `https://auth.vitatrack.tidecloak.org/realms/${TIDECLOAK_REALM}`,
+    sub: persona.vuid,
+    vuid: persona.vuid,
+    azp: TIDECLOAK_CLIENT_ID,
+    iat: nowSec,
+    exp: nowSec + 900,
+    tide_ork_quorum: '5-of-7 Threshold Nodes Verified',
+    emergent_authority_active: roleKey === 'patient' ? true : emergentAuthorityGranted,
+    realm_access: {
+      roles: persona.realmRoles,
+    },
+    resource_access: {
+      [TIDECLOAK_CLIENT_ID]: {
+        roles: activeClientRoles,
+      },
+    },
+  };
+
+  return {
+    authenticated: true,
+    roleKey: persona.key,
+    roleLabel: persona.label,
+    shortBadge: persona.shortBadge,
+    displayName: persona.displayName,
+    email: persona.email,
+    phone: persona.phone,
+    vitalId: persona.vitalId,
+    vuid: persona.vuid,
+    did: persona.did,
+    emergentAuthorityGranted,
+    realmRoles: persona.realmRoles,
+    clientRoles: activeClientRoles,
+    decodedToken,
+    dokenSignature: generateHexHash(JSON.stringify(decodedToken), 32),
+  };
+}
+
+/**
+ * Official @tidecloak/js & @tidecloak/react helper: hasRealmRole(roleName)
+ * Inspects realm_access.roles in the TideCloak Access Token
+ */
+export function hasRealmRole(session, roleName) {
+  if (!session?.authenticated) return false;
+  const roles = session?.decodedToken?.realm_access?.roles || session?.realmRoles || [];
+  return roles.includes(roleName);
+}
+
+/**
+ * Official @tidecloak/js & @tidecloak/react helper: hasClientRole(roleName, clientId)
+ * Inspects resource_access[clientId].roles in the TideCloak Access Token
+ */
+export function hasClientRole(session, roleName, clientId = TIDECLOAK_CLIENT_ID) {
+  if (!session?.authenticated) return false;
+  const roles =
+    session?.decodedToken?.resource_access?.[clientId]?.roles || session?.clientRoles || [];
+  return roles.includes(roleName);
+}
+
+/**
+ * Simulates TideCloak's tag-based client-side encryption:
+ * doEncrypt([{ data, tags: ['prescriptions'] }])
+ */
+export function doEncrypt(session, items = []) {
+  return items.map((item) => {
+    const tags = item.tags || ['prescriptions'];
+    const canEncrypt = tags.every(
+      (tag) =>
+        hasClientRole(session, `_tide_${tag}.selfencrypt`) ||
+        hasClientRole(session, 'rx:scan')
+    );
+    const serialized = typeof item.data === 'string' ? item.data : JSON.stringify(item.data);
+    const cipherHash = generateHexHash(`TIDE_E2EE_${tags.join('_')}_${serialized}`, 32);
+    return {
+      tags,
+      authorized: canEncrypt,
+      encrypted: `TIDE_CIPHER[${tags.join(',')}]:${cipherHash}`,
+      algorithm: ENCRYPTION_ALGO,
+    };
+  });
+}
+
+/**
+ * Simulates TideCloak's tag-based client-side decryption:
+ * doDecrypt([{ encrypted, plaintextFallback, tags: ['allergies'] }])
+ * Enforces _tide_<tag>.decrypt or _tide_<tag>.selfencrypt in the user's Doken!
+ */
+export function doDecrypt(session, items = []) {
+  return items.map((item) => {
+    const tags = item.tags || ['prescriptions'];
+    const canDecrypt = tags.every(
+      (tag) =>
+        hasClientRole(session, `_tide_${tag}.decrypt`) ||
+        hasClientRole(session, `_tide_${tag}.selfencrypt`)
+    );
+    if (!canDecrypt) {
+      return {
+        tags,
+        authorized: false,
+        decrypted: `🔒 [TIDECLOAK_ENCRYPTED • Missing _tide_${tags[0]}.decrypt in Doken]`,
+        error: `ACCESS_DENIED: Role "${session?.roleKey}" lacks _tide_${tags[0]}.decrypt permission.`,
+      };
+    }
+    return {
+      tags,
+      authorized: true,
+      decrypted: item.plaintextFallback ?? item.encrypted,
+      error: null,
+    };
+  });
+}
+
+/**
+ * Evaluates a comprehensive Access Check Matrix for the current TideCloak session
+ */
+export function evaluateAccessChecks(session) {
+  return [
+    {
+      id: 'chk-biometrics',
+      resource: 'Biometric Telemetry (Tag: biometrics)',
+      requiredCheck: 'hasClientRole("_tide_biometrics.decrypt")',
+      allowed:
+        hasClientRole(session, '_tide_biometrics.decrypt') ||
+        hasClientRole(session, '_tide_biometrics.selfencrypt'),
+    },
+    {
+      id: 'chk-rx-decrypt',
+      resource: 'Prescription Vault (Tag: prescriptions)',
+      requiredCheck: 'hasClientRole("_tide_prescriptions.decrypt")',
+      allowed:
+        hasClientRole(session, '_tide_prescriptions.decrypt') ||
+        hasClientRole(session, '_tide_prescriptions.selfencrypt'),
+    },
+    {
+      id: 'chk-rx-scan',
+      resource: 'Edge OCR Scanner & Parser',
+      requiredCheck: 'hasClientRole("rx:scan")',
+      allowed: hasClientRole(session, 'rx:scan'),
+    },
+    {
+      id: 'chk-allergies',
+      resource: 'Sensitive Allergies & CYP3A4 (Tag: allergies)',
+      requiredCheck: 'hasClientRole("_tide_allergies.decrypt")',
+      allowed:
+        hasClientRole(session, '_tide_allergies.decrypt') ||
+        hasClientRole(session, '_tide_allergies.selfencrypt'),
+    },
+    {
+      id: 'chk-diagnoses',
+      resource: 'Protected ICD-10 Diagnoses (Tag: diagnoses)',
+      requiredCheck: 'hasClientRole("_tide_diagnoses.decrypt")',
+      allowed:
+        hasClientRole(session, '_tide_diagnoses.decrypt') ||
+        hasClientRole(session, '_tide_diagnoses.selfencrypt'),
+    },
+    {
+      id: 'chk-ai-consult',
+      resource: 'Zero-Knowledge AI Physician',
+      requiredCheck: 'hasClientRole("ai:consult")',
+      allowed: hasClientRole(session, 'ai:consult'),
+    },
+    {
+      id: 'chk-authority-grant',
+      resource: 'Delegate Emergent Authority Quorum',
+      requiredCheck: 'hasRealmRole("patient") && hasClientRole("authority:grant")',
+      allowed: hasRealmRole(session, 'patient') && hasClientRole(session, 'authority:grant'),
+    },
+  ];
+}
+
+/**
  * Returns TideCloak Realm & DID Status
  */
-export function getTideCloakStatus() {
+export function getTideCloakStatus(session) {
   return {
     status: 'ZERO_KNOWLEDGE_PROOF_VERIFIED',
     realm: TIDECLOAK_REALM,
-    did: 'did:tide:zk:0x9f8c...3e1b44a0',
+    clientId: TIDECLOAK_CLIENT_ID,
+    vuid: session?.vuid || 'vuid:tide:0x9f8c74a1e204b8d03e1b44a0',
+    did: session?.did || 'did:tide:zk:0x9f8c...3e1b44a0',
     algorithm: ENCRYPTION_ALGO,
     zkProtocol: ZKP_PROTOCOL,
   };
@@ -124,7 +421,7 @@ export const SYNTHETIC_PATIENT_VAULT = {
           timing_slots: ['MORNING'],
           scheduled_times: ['08:00'],
           time: '08:00',
-          period: 'Once Daily • Morning',
+          period: '1X/DAY • MORNING',
           meal_relation: 'AFTER_MEAL',
           instruction: 'Take 1 tablet after breakfast with 250ml of water',
           notes: 'Take 1 tablet after breakfast with 250ml of water. Avoid grapefruit juice.',
@@ -142,7 +439,7 @@ export const SYNTHETIC_PATIENT_VAULT = {
           timing_slots: ['EVENING'],
           scheduled_times: ['19:00'],
           time: '19:00',
-          period: 'Once Daily • Evening',
+          period: '1X/DAY • EVENING',
           meal_relation: 'WITH_MEAL',
           instruction: 'Take 1 tablet with dinner to reduce stomach upset',
           notes: 'Take 1 tablet with dinner and a full glass of water.',
@@ -160,7 +457,7 @@ export const SYNTHETIC_PATIENT_VAULT = {
           timing_slots: ['BEDTIME'],
           scheduled_times: ['21:30'],
           time: '21:30',
-          period: 'Once Daily • Bedtime',
+          period: '1X/DAY • BEDTIME',
           meal_relation: 'BEFORE_BEDTIME',
           instruction: 'Take before going to sleep',
           notes: 'Take before going to sleep; hepatic cholesterol synthesis peaks overnight.',
@@ -197,7 +494,7 @@ export const SYNTHETIC_PATIENT_VAULT = {
           timing_slots: ['EVENING'],
           scheduled_times: ['19:00'],
           time: '19:00',
-          period: 'Once Daily • Evening',
+          period: '1X/DAY • EVENING',
           meal_relation: 'AFTER_MEAL',
           instruction: 'Take 1 tablet at 19:00 after dinner',
           notes: 'Take consistently at 19:00 each evening. Monitor INR and bleeding signs.',
@@ -214,8 +511,8 @@ export const SYNTHETIC_PATIENT_VAULT = {
           frequency_per_day: 2,
           timing_slots: ['MORNING', 'EVENING'],
           scheduled_times: ['08:00', '19:00'],
-          time: '08:00, 19:00',
-          period: '2x Daily (Morning & Evening)',
+          time: '08:00 • 19:00',
+          period: '2X/DAY • MORN/EVE',
           meal_relation: 'AFTER_MEAL',
           instruction: 'Take 1 tablet twice daily immediately after meals',
           notes: 'Take after food with 250ml water. Contraindicated with Warfarin.',
@@ -233,7 +530,7 @@ export const SYNTHETIC_PATIENT_VAULT = {
           timing_slots: ['BEDTIME'],
           scheduled_times: ['21:30'],
           time: '21:30',
-          period: 'Once Daily • Bedtime',
+          period: '1X/DAY • BEDTIME',
           meal_relation: 'BEFORE_BEDTIME',
           instruction: 'Take 1 tablet before going to sleep',
           notes: 'Take before going to sleep with water.',
@@ -266,7 +563,8 @@ export const SYNTHETIC_PATIENT_VAULT = {
  * Encrypts sensitive patient payload at the client edge and produces a Zero-Knowledge Proof
  * so that the AI model can verify pharmacological rules without seeing raw PII.
  */
-export function encryptHealthPayloadAtEdge(payloadType, rawData) {
+export function encryptHealthPayloadAtEdge(payloadType, rawData, session = null) {
+  const activeSession = session || createTideCloakSession('patient', false);
   const serialized = JSON.stringify(rawData);
   const timestamp = new Date().toISOString();
   const ciphertextHash = generateHexHash(serialized + timestamp, 32);
@@ -274,7 +572,10 @@ export function encryptHealthPayloadAtEdge(payloadType, rawData) {
   const keyShareId = generateHexHash(TIDECLOAK_REALM + payloadType, 16);
 
   const sanitizedForAI = {
-    zkSessionDid: SYNTHETIC_PATIENT_VAULT.patientProfile.zkSubjectDid,
+    vuid: activeSession.vuid,
+    zkSessionDid: activeSession.did,
+    activeRealmRoles: activeSession.realmRoles,
+    activeClientRoles: activeSession.clientRoles,
     patientIdentity: '[REDACTED_BY_TIDECLOAK_EDGE]',
     hospitalIdentifier: '[ZERO_KNOWLEDGE_ATTESTED]',
     clinicalTokens: Array.isArray(rawData?.medications)
@@ -293,6 +594,7 @@ export function encryptHealthPayloadAtEdge(payloadType, rawData) {
   return {
     status: 'ZERO_KNOWLEDGE_PROOF_VERIFIED',
     realm: TIDECLOAK_REALM,
+    clientId: TIDECLOAK_CLIENT_ID,
     algorithm: ENCRYPTION_ALGO,
     zkProtocol: ZKP_PROTOCOL,
     timestamp,
@@ -301,6 +603,8 @@ export function encryptHealthPayloadAtEdge(payloadType, rawData) {
     ciphertextPreview: `${ciphertextHash.slice(0, 18)}...${ciphertextHash.slice(-8)}`,
     zkProofSignature: zkProofHash,
     rawPiiExposed: false,
+    session: activeSession,
+    accessMatrix: evaluateAccessChecks(activeSession),
     sanitizedForAI,
   };
 }
@@ -309,12 +613,34 @@ export function encryptHealthPayloadAtEdge(payloadType, rawData) {
  * Context-Aware Zero-Trust AI Health Assistant Pipeline
  * Cross-references active prescriptions, meal relations, water volume, dietary cautions, and reminders.
  */
-export function processZeroTrustAiQuery(userQuery, activePrescription, onSyncReminders) {
+export function processZeroTrustAiQuery(userQuery, activePrescription, onSyncReminders, session = null) {
+  const activeSession = session || createTideCloakSession('patient', false);
   const meds = activePrescription?.medications || [];
-  const edgeProof = encryptHealthPayloadAtEdge('AI_CLINICAL_QUERY', {
-    query: userQuery,
-    medications: meds,
-  });
+  const edgeProof = encryptHealthPayloadAtEdge(
+    'AI_CLINICAL_QUERY',
+    {
+      query: userQuery,
+      medications: meds,
+    },
+    activeSession
+  );
+
+  // Enforce TideCloak Access Check: hasClientRole('ai:consult')
+  if (!hasClientRole(activeSession, 'ai:consult')) {
+    return {
+      reply: `🔒 TideCloak Access Control Blocked: Your active role (${activeSession.roleLabel}) lacks the "ai:consult" and "_tide_prescriptions.decrypt" client roles in resource_access["${TIDECLOAK_CLIENT_ID}"].`,
+      highlights: [
+        {
+          title: 'Zero-Knowledge Enclave Rejection (HTTP 403)',
+          detail:
+            'Under TideCloak’s Ignorant Admin model, infrastructure administrators cannot query the AI Physician against patient prescriptions or decrypt medical tags.',
+          type: 'critical',
+        },
+      ],
+      edgeProof,
+      triggeredReminderSync: false,
+    };
+  }
 
   const q = userQuery.toLowerCase();
   const medSummaryList = meds

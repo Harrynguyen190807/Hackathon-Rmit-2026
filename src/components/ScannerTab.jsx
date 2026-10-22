@@ -17,17 +17,28 @@ import {
   formatMealRelationLabel,
   formatCompactTimingLabel,
 } from '../services/prescriptionParser';
-import { SYNTHETIC_PATIENT_VAULT } from '../services/tidecloak';
+import {
+  SYNTHETIC_PATIENT_VAULT,
+  hasClientRole,
+} from '../services/tidecloak';
 
 export default function ScannerTab({
   activeRxKey = 'standardCardioRx',
   onSelectRx,
   prescription = SYNTHETIC_PATIENT_VAULT.presetPrescriptions.standardCardioRx,
   edgeProof,
+  tideSession,
+  onSelectRole,
+  onToggleEmergentAuthority,
   onSaveToSchedule,
   onUpdateCustomRx,
   onNavigate,
 }) {
+  const canDecryptPrescriptions =
+    !tideSession ||
+    hasClientRole(tideSession, '_tide_prescriptions.decrypt') ||
+    hasClientRole(tideSession, '_tide_prescriptions.selfencrypt');
+  const canScanRx = !tideSession || hasClientRole(tideSession, 'rx:scan');
   const [cameraActive, setCameraActive] = useState(false);
   const [facingMode, setFacingMode] = useState('environment');
   const [cameraError, setCameraError] = useState('');
@@ -231,8 +242,44 @@ export default function ScannerTab({
 
       <TideCloakBadge
         proofData={edgeProof}
-        contextLabel="Prescription OCR Sanitized Before AI Analysis"
+        session={tideSession}
+        onSelectRole={onSelectRole}
+        onToggleEmergentAuthority={onToggleEmergentAuthority}
+        contextLabel="Prescription OCR Protected by _tide_prescriptions"
       />
+
+      {!canDecryptPrescriptions && (
+        <div className="rounded-2xl bg-[#ffdad6] text-[#93000a] p-3.5 border border-[#ba1a1a]/30 text-xs space-y-1.5">
+          <div className="flex items-center justify-between font-extrabold">
+            <span>🔒 TideCloak Access Denied (`_tide_prescriptions.decrypt`)</span>
+            <span className="text-[9.5px] px-2 py-0.5 rounded bg-white/80 uppercase">
+              HTTP 403 • IGNORANT ADMIN
+            </span>
+          </div>
+          <p className="leading-relaxed">
+            Your active Doken (<strong>{tideSession?.roleLabel}</strong>) lacks{' '}
+            <code>_tide_prescriptions.decrypt</code> and <code>rx:scan</code>. Prescription payloads below are masked as ciphertext.
+          </p>
+          {onSelectRole && (
+            <div className="flex gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => onSelectRole('patient')}
+                className="px-3 py-1 rounded-full bg-[#0b3026] text-[#cceda3] text-[10.5px] font-bold"
+              >
+                Switch to Patient
+              </button>
+              <button
+                type="button"
+                onClick={() => onSelectRole('clinician')}
+                className="px-3 py-1 rounded-full bg-[#24473b] text-white text-[10.5px] font-bold"
+              >
+                Switch to Clinician
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       <input
         ref={fileInputRef}
@@ -539,18 +586,26 @@ export default function ScannerTab({
                 {/* Commercial/Brand Name + Dosage */}
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <span className="text-sm font-extrabold text-[#0b3026]">
-                    {m.brand_name || m.name} {m.dosage}
+                    {canDecryptPrescriptions
+                      ? `${m.brand_name || m.name} ${m.dosage}`
+                      : `🔒 TIDE_CIPHER[prescriptions]`}
                   </span>
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#c7e89e]/70 text-[#0b3026] font-bold">
-                    {formatMealRelationLabel(m.meal_relation)}
+                    {canDecryptPrescriptions
+                      ? formatMealRelationLabel(m.meal_relation)
+                      : 'E2EE LOCKED'}
                   </span>
                 </div>
                 {/* Secondary Active Ingredient Reference */}
                 <div className="text-[11px] font-semibold text-[#4b662b] truncate">
-                  Active Ingredient: {m.active_ingredient || m.name}
+                  {canDecryptPrescriptions
+                    ? `Active Ingredient: ${m.active_ingredient || m.name}`
+                    : 'Missing _tide_prescriptions.decrypt in Doken'}
                 </div>
                 <div className="text-[11px] text-[#687771] mt-0.5 leading-snug">
-                  {m.notes || m.instruction}
+                  {canDecryptPrescriptions
+                    ? m.notes || m.instruction
+                    : '0x8f92e1c4b07a... Encrypted by Tide Threshold Prism'}
                 </div>
               </div>
             </div>

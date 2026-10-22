@@ -1,0 +1,23 @@
+{
+  "realm": "vitatrack-sovereign-health",
+  "auth-server-url": "https://auth.vitatrack.tidecloak.org",
+  "ssl-required": "external",
+  "resource": "vitatrack-client",
+  "public-client": true,
+  "confidential-port": 0,
+  "upside-down-tide": true,
+  "ork-url": "https://ork1.tideprotocol.com",
+  "thresh-sig-algo": "BLS12-381-Tide-MPC",
+  "jwk": {
+    "keys": [
+      {
+        "kid": "tide-ork-quorum-2026-v2",
+        "kty": "OKP",
+        "alg": "EdDSA",
+        "use": "sig",
+        "crv": "Ed25519",
+        "x": "9f8c74a1e204b8d03e1b44a0c72910fa83e211b904a"
+      }
+    ]
+  }
+}
