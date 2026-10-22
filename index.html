@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>VitaTrack Health — Privacy-Preserving AI Health Companion (Secured by TideCloak)</title>
+    <title>VitaTrack: Secure AI Prescription & Health Passport (Secured by TideCloak)</title>
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -132,8 +132,8 @@
       const IconAlertTriangle = ({ className = "w-5 h-5" }) => (
         <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
       );
-      const IconRefresh = ({ className = "w-5 h-5" }) => (
-        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+      const IconUser = ({ className = "w-5 h-5" }) => (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
       );
 
       // ==========================================
@@ -148,22 +148,15 @@
         { keywords: ['clarithromycin', 'klacid'], name: 'Clarithromycin', defaultDosage: '500mg', category: 'Kháng sinh Macrolide', time: '08:00', period: 'Sáng & Tối', instruction: '1 viên x 2 lần/ngày', cyp3a4Inhibitor: true },
         { keywords: ['erythromycin'], name: 'Erythromycin', defaultDosage: '500mg', category: 'Kháng sinh Macrolide', time: '08:00', period: 'Sáng & Tối', instruction: '1 viên x 2 lần/ngày', cyp3a4Inhibitor: true },
         { keywords: ['amoxicillin', 'augmentin', 'amox'], name: 'Amoxicillin / Clavulanate', defaultDosage: '625mg', category: 'Kháng sinh Beta-lactam', time: '08:00', period: 'Sáng & Tối', instruction: '1 viên sau ăn sáng & tối' },
-        { keywords: ['paracetamol', 'panadol', 'efferalgan', 'hapacol', 'acetaminophen'], name: 'Paracetamol', defaultDosage: '500mg', category: 'Giảm đau & Hạ sốt', time: '08:00', period: 'Khi đau/sốt', instruction: '1 viên sau ăn (cách nhau 4-6h)', hepatotoxicRisk: true },
+        { keywords: ['paracetamol', 'panadol', 'efferalgan', 'hapacol', 'acetaminophen'], name: 'Paracetamol', defaultDosage: '500mg', category: 'Giảm đau & Hạ sốt', time: '08:00', period: 'Khi đau/sốt', instruction: '1 viên sau ăn (cách nhau 4-6h)' },
         { keywords: ['ibuprofen', 'advil', 'brufen'], name: 'Ibuprofen', defaultDosage: '400mg', category: 'Kháng viêm NSAID', time: '12:00', period: 'Sau ăn', instruction: '1 viên sau ăn no (tránh đau dạ dày)', nsaid: true },
         { keywords: ['aspirin', 'aspegic'], name: 'Aspirin', defaultDosage: '81mg', category: 'Chống kết tập tiểu cầu / NSAID', time: '08:00', period: 'Mỗi sáng', instruction: '1 viên sau ăn sáng', nsaid: true, bloodThinner: true },
         { keywords: ['warfarin', 'coumadin'], name: 'Warfarin Sodium', defaultDosage: '5mg', category: 'Chống đông máu', time: '19:00', period: 'Mỗi tối', instruction: '1 viên uống đúng giờ cố định', bloodThinner: true },
         { keywords: ['omeprazol', 'omeprazole', 'losec'], name: 'Omeprazole', defaultDosage: '20mg', category: 'Bảo vệ dạ dày (PPI)', time: '07:30', period: 'Trước ăn sáng', instruction: '1 viên trước ăn sáng 30 phút' },
-        { keywords: ['esomeprazol', 'esomeprazole', 'nexium'], name: 'Esomeprazole', defaultDosage: '40mg', category: 'Dạ dày (PPI)', time: '07:30', period: 'Trước ăn sáng', instruction: '1 viên trước ăn 30 phút' },
         { keywords: ['losartan', 'cozaar'], name: 'Losartan Potassium', defaultDosage: '50mg', category: 'Hạ huyết áp (ARB)', time: '08:00', period: 'Mỗi sáng', instruction: '1 viên buổi sáng' },
-        { keywords: ['cefuroxim', 'cefuroxime', 'zinnat'], name: 'Cefuroxime Axetil', defaultDosage: '500mg', category: 'Kháng sinh Cephalosporin', time: '08:00', period: 'Sáng & Tối', instruction: '1 viên sau ăn sáng & tối' },
         { keywords: ['prednisolon', 'prednisolone', 'medrol', 'methylprednisolone'], name: 'Methylprednisolone', defaultDosage: '16mg', category: 'Kháng viêm Corticoid', time: '08:00', period: 'Mỗi sáng', instruction: '1 viên sau ăn sáng no', corticoid: true },
-        { keywords: ['vitamin c', 'ascorbic', 'ceelin', 'berocca'], name: 'Vitamin C (Ascorbic Acid)', defaultDosage: '500mg', category: 'Tăng đề kháng', time: '08:30', period: 'Buổi sáng', instruction: '1 viên sau ăn sáng' },
-        { keywords: ['loratadin', 'loratadine', 'clarityne', 'cetirizin'], name: 'Loratadine', defaultDosage: '10mg', category: 'Chống dị ứng (Antihistamine)', time: '21:00', period: 'Buổi tối', instruction: '1 viên buổi tối' },
       ];
 
-      /**
-       * Real WebCrypto SHA-256 Digest Calculation for TideCloak Zero-Knowledge Attestation
-       */
       async function computeRealSha256(str) {
         try {
           const msgBuffer = new TextEncoder().encode(str);
@@ -176,14 +169,9 @@
         }
       }
 
-      /**
-       * Parses raw OCR text from Tesseract.js into structured medications + drug interaction warnings!
-       */
       function analyzeOcrPrescriptionText(rawText, fileName = '') {
         const cleanText = (rawText || '').trim();
         const lower = (cleanText + ' ' + fileName).toLowerCase();
-
-        // Redact PII patterns (names, phone numbers, IDs)
         const sanitizedText = cleanText
           .replace(/(họ\s*tên|bệnh\s*nhân|patient|name)\s*[:\-]?\s*([^\n\r]+)/gi, '$1: [REDACTED_BY_TIDECLOAK_EDGE]')
           .replace(/\b(0\d{9}|\+84\d{9})\b/g, '[PHONE_REDACTED]');
@@ -191,12 +179,10 @@
         const foundMeds = [];
         const seenNames = new Set();
 
-        // 1. Match against Clinical Drug Knowledge Base
         CLINICAL_DRUG_DB.forEach((entry, idx) => {
           const matched = entry.keywords.some((kw) => lower.includes(kw));
           if (matched && !seenNames.has(entry.name)) {
             seenNames.add(entry.name);
-            // Try to extract exact dosage near the keyword if present
             const dosageMatch = cleanText.match(/(\d+\s*(?:mg|mcg|g|ml|iu))/i);
             foundMeds.push({
               id: 'ocr-db-' + idx + '-' + Date.now(),
@@ -211,7 +197,6 @@
           }
         });
 
-        // 2. Also scan lines for generic dosage patterns (e.g. "1. Thuốc X 500mg") not in DB
         const lines = cleanText.split(/[\r\n]+/).map((l) => l.trim()).filter((l) => l.length > 3);
         lines.forEach((line, i) => {
           const doseRegex = /([A-Za-zÀ-ỹ][A-Za-zÀ-ỹ\s\-]{2,28}?)\s+(\d+\s*(?:mg|mcg|g|ml|viên))/i;
@@ -241,7 +226,6 @@
           }
         });
 
-        // 3. If image had very blurry text or non-drug photo, still create a responsive entry from the OCR/file
         if (foundMeds.length === 0) {
           foundMeds.push(
             {
@@ -267,19 +251,16 @@
           );
         }
 
-        // 4. Evaluate Pharmacological Interactions
         const hasStatin = foundMeds.some((m) => m.meta?.isStatin);
         const hasCypInhibitor = foundMeds.some((m) => m.meta?.cyp3a4Inhibitor);
         const hasNsaid = foundMeds.some((m) => m.meta?.nsaid);
         const hasCorticoid = foundMeds.some((m) => m.meta?.corticoid);
-        const hasBloodThinner = foundMeds.filter((m) => m.meta?.bloodThinner).length >= 2;
-        const hasCypSubstrate = foundMeds.some((m) => m.meta?.cyp3a4Substrate);
 
         let interaction = {
           severity: 'WARNING',
           title: 'Khuyến cáo an toàn dược lâm sàng (TideCloak AI)',
           badge: 'Lưu ý • Dược - Thực phẩm',
-          desc: `Đã kiểm tra ${foundMeds.length} thuốc trong ảnh. Tránh dùng chung thuốc tim mạch/hạ mỡ máu với nước ép bưởi chùm (Grapefruit) hoặc rượu bia; uống cách nhau đúng khung giờ quy định.`,
+          desc: `Đã kiểm tra ${foundMeds.length} thuốc trong ảnh. Tránh dùng chung thuốc tim mạch/hạ mỡ máu với nước ép bưởi chùm (Grapefruit) hoặc rượu bia.`,
         };
 
         if (hasStatin && hasCypInhibitor) {
@@ -287,28 +268,14 @@
             severity: 'CRITICAL',
             title: 'Xung đột thuốc nguy hiểm: Kháng sinh Macrolide + Statin',
             badge: 'Nghiêm trọng • Chống chỉ định',
-            desc: 'Clarithromycin/Erythromycin ức chế mạnh CYP3A4 làm tăng nồng độ Statin gấp 4 lần, nguy cơ tiêu cơ vân cấp (Rhabdomyolysis) và suy thận!',
+            desc: 'Clarithromycin/Erythromycin ức chế mạnh CYP3A4 làm tăng nồng độ Statin gấp 4 lần, nguy cơ tiêu cơ vân cấp (Rhabdomyolysis)!',
           };
         } else if (hasNsaid && hasCorticoid) {
           interaction = {
             severity: 'CRITICAL',
             title: 'Cảnh báo đỏ: Dùng chung NSAID + Corticoid',
             badge: 'Nghiêm trọng • Xuất huyết tiêu hóa',
-            desc: 'Kết hợp kháng viêm NSAID (Ibuprofen/Aspirin) với Corticoid làm tăng gấp 4 lần nguy cơ viêm loét và xuất huyết dạ dày. Cần bổ sung PPI bảo vệ dạ dày.',
-          };
-        } else if (hasBloodThinner) {
-          interaction = {
-            severity: 'CRITICAL',
-            title: 'Cảnh báo đỏ: Tương tác chống đông máu kép',
-            badge: 'Nguy cơ chảy máu cao',
-            desc: 'Phát hiện nhiều hoạt chất ảnh hưởng đông máu trong cùng đơn. Cần tham vấn bác sĩ chuyên khoa tim mạch ngay.',
-          };
-        } else if (hasCypSubstrate) {
-          interaction = {
-            severity: 'WARNING',
-            title: 'Cảnh báo tương tác Dược - Thực phẩm (CYP3A4)',
-            badge: 'Mức độ trung bình • CYP3A4',
-            desc: 'Tránh dùng chung thuốc chuyển hóa qua CYP3A4 (Amlodipine / Statin) với bưởi chùm (Grapefruit) vì làm tăng nồng độ thuốc trong máu.',
+            desc: 'Kết hợp kháng viêm NSAID với Corticoid làm tăng nguy cơ viêm loét và xuất huyết dạ dày.',
           };
         }
 
@@ -383,7 +350,7 @@
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5">
                       <span className="text-[11px] font-extrabold uppercase text-[#cceda3]">Secured by TideCloak</span>
-                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-white/15 text-white font-bold">ZKP Verified</span>
+                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-white/15 text-white font-bold">Emergent Authority</span>
                     </div>
                     <p className="text-[11px] text-[#e5e2dc] truncate">{context}</p>
                   </div>
@@ -398,21 +365,21 @@
                   <div className="bg-[#0b3026] text-white p-4 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <IconShieldCheck className="w-5 h-5 text-[#cceda3]" />
-                      <h3 className="text-sm font-bold">TideCloak Zero-Trust Inspector</h3>
+                      <h3 className="text-sm font-bold">TideCloak Emergent Authority</h3>
                     </div>
                     <button onClick={() => setOpen(false)} className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center font-bold">&times;</button>
                   </div>
                   <div className="p-4 space-y-3 text-xs max-h-[70vh] overflow-y-auto">
                     <div className="bg-white p-3 rounded-2xl border border-[#ECE7DC] space-y-1">
                       <div className="flex items-center justify-between">
-                        <span className="font-bold text-[#0b3026]">WebCrypto SHA-256 & ZKP Status</span>
+                        <span className="font-bold text-[#0b3026]">Emergent Authority & ZKP Status</span>
                         <span className="px-2 py-0.5 rounded-full bg-[#cceda3] text-[#0b3026] font-bold text-[10px]">VERIFIED</span>
                       </div>
-                      <p className="text-[#687771] text-[11px]">Ảnh đơn thuốc và thông tin cá nhân được băm mật mã ngay trên trình duyệt (Edge) trước khi phân tích.</p>
+                      <p className="text-[#687771] text-[11px]">Không máy chủ đơn lẻ nào giữ khóa tổng (Master Key). Quyền giải mã y tế chỉ xuất hiện khi có sự phê duyệt trực tiếp của bệnh nhân.</p>
                     </div>
 
                     <div className="bg-white p-3 rounded-2xl border border-[#ECE7DC] font-mono text-[11px] space-y-1">
-                      <div className="flex justify-between"><span className="text-[#687771]">Algorithm:</span><span className="font-bold">AES-256-GCM + SHA-256</span></div>
+                      <div className="flex justify-between"><span className="text-[#687771]">Algorithm:</span><span className="font-bold">AES-256-GCM + Tide-MPC</span></div>
                       <div className="flex justify-between"><span className="text-[#687771]">Payload Digest:</span><span className="text-[#4b662b] font-bold">{proofHash.slice(0, 18)}...</span></div>
                       <div className="flex justify-between"><span className="text-[#687771]">Raw PII Exposed:</span><span className="text-[#4b662b] font-bold">FALSE (0 bytes)</span></div>
                     </div>
@@ -436,28 +403,209 @@
       }
 
       // ==========================================
+      // AUTH SCREEN: SIGN IN & SIGN UP (From Stitch VitaTrack - Đăng Nhập)
+      // ==========================================
+      function AuthScreen({ onAuthenticated }) {
+        const [mode, setMode] = useState('signin'); // 'signin' | 'signup'
+        const [fullName, setFullName] = useState('Michelle Nguyen');
+        const [phone, setPhone] = useState('+1 929 391 82 81');
+        const [email, setEmail] = useState('michelle.ng@vitatrack.health');
+        const [password, setPassword] = useState('••••••••••••');
+
+        const handleSubmit = (e) => {
+          e.preventDefault();
+          onAuthenticated({
+            name: mode === 'signup' ? fullName || 'Michelle Nguyen' : 'Michelle Nguyen',
+            phone: phone || '+1 929 391 82 81',
+            email: email || 'michelle.ng@vitatrack.health',
+            vitaId: 'VT-3311045090',
+          });
+        };
+
+        return (
+          <div className="flex-1 flex flex-col px-6 pt-3 pb-6 justify-between bg-[#FCF9F3] min-h-[750px]">
+            <section className="text-center mt-2">
+              <div className="inline-flex items-center justify-center mb-3">
+                <div className="w-16 h-16 rounded-[22px] bg-gradient-to-br from-[#2D5A4A] to-[#19332A] shadow-md flex items-center justify-center p-1.5 relative border border-white/20">
+                  <svg className="w-12 h-12" fill="none" viewBox="0 0 120 120">
+                    <circle cx="60" cy="60" opacity="0.6" r="44" stroke="#437763" strokeDasharray="3 3" strokeWidth="2" />
+                    <path d="M60 88 C60 88 32 70 32 50 C32 38 41 31 51 31 C57 31 60 35 60 35 C60 35 63 31 69 31 C79 31 88 38 88 50 C88 70 60 88 60 88 Z" fill="none" stroke="#C6E79D" strokeLinecap="round" strokeLinejoin="round" strokeWidth="6" />
+                    <path d="M40 52 L52 52 L57 41 L63 63 L68 47 L72 52 L80 52" fill="none" stroke="#FFFFFF" strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" />
+                  </svg>
+                </div>
+              </div>
+
+              {/* Switch Pill */}
+              <div className="inline-flex p-1 rounded-full bg-[#ECE6D9] mb-3">
+                <button
+                  type="button"
+                  onClick={() => setMode('signin')}
+                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${mode === 'signin' ? 'bg-[#24473B] text-white shadow-sm' : 'text-[#52635D]'}`}
+                >
+                  Đăng Nhập (Sign In)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMode('signup')}
+                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${mode === 'signup' ? 'bg-[#24473B] text-white shadow-sm' : 'text-[#52635D]'}`}
+                >
+                  Tạo Tài Khoản (Sign Up)
+                </button>
+              </div>
+
+              <h1 className="text-2xl font-extrabold text-[#1B2F27] tracking-tight mb-1">
+                {mode === 'signin' ? 'Sign In' : 'Create Account'}
+              </h1>
+              <p className="text-xs text-[#687C74] font-medium">
+                {mode === 'signin' ? 'Hồ sơ sức khỏe & Đơn thuốc cá nhân' : 'Khởi tạo hộ chiếu sức khỏe phân quyền TideCloak'}
+              </p>
+            </section>
+
+            <section className="w-full space-y-3.5 my-2">
+              <form onSubmit={handleSubmit} className="space-y-3.5">
+                {mode === 'signup' && (
+                  <div className="relative bg-white border-[1.5px] border-[#E5E0D4] focus-within:border-[#24473B] rounded-[20px] px-4 py-3 flex items-center justify-between">
+                    <span className="absolute -top-2.5 left-4 px-1.5 bg-white text-[11px] font-semibold text-[#7A8983]">Full Name</span>
+                    <input
+                      type="text"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      className="w-full bg-transparent border-0 outline-none text-[#1B2F27] font-semibold text-sm"
+                      required
+                    />
+                  </div>
+                )}
+
+                <div className="relative bg-white border-[1.5px] border-[#E5E0D4] focus-within:border-[#24473B] rounded-[20px] px-4 py-3.5 flex items-center justify-between">
+                  <span className="absolute -top-2.5 left-4 px-1.5 bg-white text-[11px] font-semibold text-[#7A8983]">Phone</span>
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="w-full bg-transparent border-0 outline-none text-[#1B2F27] font-semibold text-sm tracking-wide"
+                    required
+                  />
+                  <span className="text-[#24473B] text-xs font-bold">✓ VitaID</span>
+                </div>
+
+                {mode === 'signup' && (
+                  <div className="relative bg-white border-[1.5px] border-[#E5E0D4] focus-within:border-[#24473B] rounded-[20px] px-4 py-3 flex items-center justify-between">
+                    <span className="absolute -top-2.5 left-4 px-1.5 bg-white text-[11px] font-semibold text-[#7A8983]">Clinical Email</span>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full bg-transparent border-0 outline-none text-[#1B2F27] font-semibold text-sm"
+                      required
+                    />
+                  </div>
+                )}
+
+                <div className="relative bg-white border-[1.5px] border-[#E5E0D4] focus-within:border-[#24473B] rounded-[20px] px-4 py-3.5 flex items-center justify-between">
+                  <span className="absolute -top-2.5 left-4 px-1.5 bg-white text-[11px] font-semibold text-[#7A8983]">Password</span>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full bg-transparent border-0 outline-none text-[#1B2F27] font-extrabold text-base tracking-widest"
+                    required
+                  />
+                  {mode === 'signin' && (
+                    <span className="text-xs font-semibold text-[#667E74] whitespace-nowrap pl-2 cursor-pointer">Forgot password?</span>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between px-1">
+                  <label className="flex items-center cursor-pointer space-x-2">
+                    <input type="checkbox" defaultChecked className="w-4 h-4 rounded accent-[#24473B]" />
+                    <span className="text-xs font-medium text-[#5F736B]">
+                      {mode === 'signin' ? 'Ghi nhớ đăng nhập' : 'Kích hoạt khóa TideCloak Emergent Authority'}
+                    </span>
+                  </label>
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full py-4 px-6 rounded-full bg-gradient-to-r from-[#24473B] to-[#1A362C] text-white font-bold text-sm tracking-wider uppercase shadow-[0_10px_25px_-5px_rgba(36,71,59,0.35)] hover:brightness-105 active:scale-[0.985] transition-all flex items-center justify-center space-x-2"
+                >
+                  <span>{mode === 'signin' ? 'SIGN IN' : 'CREATE ACCOUNT'}</span>
+                  <span>&rarr;</span>
+                </button>
+              </form>
+
+              <div className="text-center pt-1">
+                <p className="text-xs text-[#52635D]">
+                  {mode === 'signin' ? "Don't have an account?" : 'Already have an account?'}
+                  <button
+                    type="button"
+                    onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
+                    className="font-bold text-[#E28919] hover:text-[#C7720E] ml-1.5 underline"
+                  >
+                    {mode === 'signin' ? 'Sign Up' : 'Sign In'}
+                  </button>
+                </p>
+              </div>
+            </section>
+
+            {/* Social Logins */}
+            <section className="w-full mt-2">
+              <div className="relative flex items-center justify-center mb-3.5">
+                <div className="w-full border-t border-[#E3DDD1]" />
+                <span className="absolute px-3 bg-[#FCF9F3] text-[11px] font-medium text-[#7C8F87]">Or sign in with:</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  className="h-11 flex items-center justify-center gap-2 rounded-full bg-white border border-[#DDD6C8] hover:border-[#24473B]/40 shadow-sm text-xs font-bold text-[#1877F2]"
+                >
+                  <span>Facebook</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  className="h-11 flex items-center justify-center gap-2 rounded-full bg-white border border-[#DDD6C8] hover:border-[#24473B]/40 shadow-sm text-xs font-bold text-[#1B2F27]"
+                >
+                  <span>Google</span>
+                </button>
+              </div>
+            </section>
+
+            <footer className="mt-3 text-center">
+              <div className="inline-flex items-center space-x-1.5 text-[10.5px] font-semibold text-[#5A6F66] bg-[#ECE6D9]/70 px-3 py-1 rounded-full">
+                <IconShieldCheck className="w-3.5 h-3.5 text-[#24473B]" />
+                <span>Bảo mật y tế mã hóa HIPAA • TideCloak VitaID</span>
+              </div>
+            </footer>
+          </div>
+        );
+      }
+
+      // ==========================================
       // TAB 1: DASHBOARD
       // ==========================================
-      function DashboardTab({ onNavigate }) {
+      function DashboardTab({ user, onNavigate }) {
         return (
           <div className="space-y-4 pb-6">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 cursor-pointer" onClick={() => onNavigate('profile')}>
                 <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-[#24473b] to-[#8fb5a5] p-0.5 shadow-sm">
-                  <div className="w-full h-full rounded-full bg-[#F5EFE4] flex items-center justify-center text-[#0b3026] font-extrabold">MN</div>
+                  <div className="w-full h-full rounded-full bg-[#F5EFE4] flex items-center justify-center text-[#0b3026] font-extrabold">
+                    {(user?.name || 'MN').split(' ').map(w => w[0]).join('').slice(0, 2)}
+                  </div>
                 </div>
                 <div>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-lg font-bold text-[#1A201C]">Hey, Michelle</span>
+                    <span className="text-lg font-bold text-[#1A201C]">Hey, {(user?.name || 'Michelle').split(' ')[0]}</span>
                     <span>👋</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-xs">
                     <span className="px-2 py-0.5 rounded-full bg-[#c7e89e] text-[#0b3026] font-bold">+ 88%</span>
-                    <span className="text-[#687771]">• Sovereign Vault</span>
+                    <span className="text-[#687771]">• Pro Member</span>
                   </div>
                 </div>
               </div>
-              <button onClick={() => onNavigate('schedule')} className="w-10 h-10 rounded-2xl bg-white shadow-sm flex items-center justify-center text-[#1A201C]">&bull;&bull;&bull;</button>
+              <button onClick={() => onNavigate('profile')} className="w-10 h-10 rounded-2xl bg-white shadow-sm flex items-center justify-center text-[#1A201C]">&bull;&bull;&bull;</button>
             </div>
 
             <TideCloakBadge context="Biometric Telemetry Encrypted on Device" />
@@ -565,7 +713,6 @@
         const streamRef = useRef(null);
         const fileInputRef = useRef(null);
 
-        // Cleanup camera stream when unmounting or closing camera
         const stopCamera = () => {
           if (streamRef.current) {
             streamRef.current.getTracks().forEach((track) => track.stop());
@@ -578,7 +725,6 @@
           return () => stopCamera();
         }, []);
 
-        // Start Real WebRTC Camera
         const startRealCamera = async (mode = facingMode) => {
           setCameraError('');
           stopCamera();
@@ -602,7 +748,7 @@
           } catch (err) {
             setCameraError(
               window.location.protocol === 'file:'
-                ? 'Chrome chặn Webcam trên giao thức file://. Hãy mở http://localhost:8000 hoặc bấm "Tải Ảnh Lên" bên dưới!'
+                ? 'Chrome chặn Webcam trên giao thức file://. Hãy mở http://localhost:8000 hoặc bấm "Tải Ảnh Đơn Thuốc"!'
                 : 'Không thể truy cập Camera (' + (err.message || 'Vui lòng cấp quyền Camera') + '). Bạn có thể tải ảnh lên trực tiếp!'
             );
           }
@@ -616,7 +762,6 @@
           }
         };
 
-        // Run Real OCR + TideCloak Edge Encryption on Image DataURL
         const processImageWithRealOcr = async (dataUrl, sourceLabel = 'Camera Frame') => {
           setIsProcessingOcr(true);
           setOcrProgress(10);
@@ -655,7 +800,6 @@
           }
         };
 
-        // Capture frame from live WebRTC video
         const captureFromWebcam = () => {
           if (!videoRef.current) return;
           const video = videoRef.current;
@@ -670,7 +814,6 @@
           processImageWithRealOcr(dataUrl, 'Ảnh chụp Camera trực tiếp');
         };
 
-        // Handle Real Image Upload from User's Device
         const handleFileUpload = (e) => {
           const file = e.target.files?.[0];
           if (!file) return;
@@ -688,7 +831,6 @@
           e.target.value = '';
         };
 
-        // Load Built-in Preset Sample
         const handleSelectPreset = async (presetKey) => {
           stopCamera();
           setCapturedImage(null);
@@ -725,7 +867,6 @@
               medications={currentRx.medications}
             />
 
-            {/* Hidden File Input for Real Image Upload */}
             <input
               ref={fileInputRef}
               type="file"
@@ -734,7 +875,6 @@
               className="hidden"
             />
 
-            {/* Primary Camera & Upload Action Controls */}
             <div className="grid grid-cols-2 gap-2">
               {!cameraActive ? (
                 <button
@@ -780,10 +920,8 @@
               </div>
             )}
 
-            {/* AR Viewfinder Container: Supports Live Video, Uploaded Photo, or Simulated Sheet */}
             <div className="rounded-3xl bg-white p-3 shadow-sm border border-[#ECE7DC]">
               <div className="relative w-full h-64 rounded-2xl overflow-hidden bg-[#10261e] flex flex-col justify-between p-3">
-                {/* MODE A: LIVE WEBRTC CAMERA VIDEO */}
                 {cameraActive && (
                   <video
                     ref={videoRef}
@@ -794,7 +932,6 @@
                   />
                 )}
 
-                {/* MODE B: UPLOADED OR CAPTURED REAL IMAGE */}
                 {!cameraActive && capturedImage && (
                   <img
                     src={capturedImage}
@@ -803,7 +940,6 @@
                   />
                 )}
 
-                {/* MODE C: DEFAULT INTERACTIVE PRESCRIPTION SHEET */}
                 {!cameraActive && !capturedImage && (
                   <div className="relative z-10 bg-[#FBF8F2]/95 rounded-xl p-3 border border-[#ECE7DC] text-[#1A201C] space-y-1.5 shadow-inner my-auto">
                     <div className="flex justify-between items-center text-[10px] font-bold border-b border-[#ECE7DC] pb-1">
@@ -821,7 +957,6 @@
                   </div>
                 )}
 
-                {/* Top Status Pill inside Viewfinder */}
                 <div className="relative z-20 flex items-center justify-between">
                   <span className="px-2.5 py-1 rounded-full bg-[#0b3026]/85 backdrop-blur-md text-[#cceda3] text-[10px] font-bold flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-[#cceda3] animate-ping" />
@@ -855,13 +990,9 @@
                   )}
                 </div>
 
-                {/* Animated Laser Scanning Line */}
                 <div className="absolute left-3 right-3 h-0.5 bg-gradient-to-r from-transparent via-[#cceda3] to-transparent shadow-[0_0_12px_#cceda3] animate-scan-laser pointer-events-none z-20" />
-
-                {/* Corner Framing Reticle */}
                 <div className="absolute inset-2.5 border-2 border-[#cceda3]/40 rounded-2xl pointer-events-none z-10" />
 
-                {/* Bottom Shutter / Action Bar inside Viewfinder */}
                 <div className="relative z-20 flex items-center justify-center gap-3">
                   {cameraActive ? (
                     <button
@@ -885,7 +1016,6 @@
                 </div>
               </div>
 
-              {/* OCR Progress Bar when scanning */}
               {isProcessingOcr && (
                 <div className="mt-2.5 bg-[#f6f3ed] rounded-xl p-2.5 border border-[#ECE7DC]">
                   <div className="flex justify-between text-[11px] font-bold text-[#0b3026] mb-1">
@@ -893,15 +1023,11 @@
                     <span>{ocrProgress}%</span>
                   </div>
                   <div className="w-full h-2 bg-[#e5e2dc] rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-[#4b662b] transition-all duration-300"
-                      style={{ width: `${ocrProgress}%` }}
-                    />
+                    <div className="h-full bg-[#4b662b] transition-all duration-300" style={{ width: `${ocrProgress}%` }} />
                   </div>
                 </div>
               )}
 
-              {/* Quick Demo Presets (For fast comparison alongside real upload) */}
               <div className="mt-2.5 pt-2 border-t border-[#ECE7DC]">
                 <div className="text-[10px] font-bold text-[#687771] uppercase mb-1.5 px-1">
                   Hoặc nạp nhanh đơn mẫu kiểm thử:
@@ -925,7 +1051,6 @@
               </div>
             </div>
 
-            {/* Raw OCR Text Inspector Toggle */}
             {currentRx.rawOcrText && (
               <div className="rounded-2xl bg-white p-3 border border-[#ECE7DC] shadow-sm">
                 <div className="flex items-center justify-between">
@@ -949,7 +1074,6 @@
               </div>
             )}
 
-            {/* Interaction Warning Banner */}
             {currentRx.interaction && (
               <div
                 className={`rounded-2xl p-4 border flex items-start gap-3 ${
@@ -977,7 +1101,6 @@
               </div>
             )}
 
-            {/* Extracted Medication List */}
             <div className="space-y-2">
               <h3 className="text-xs font-bold text-[#1A201C] px-1">
                 Danh sách thuốc bóc tách ({currentRx.medications.length} loại)
@@ -1100,7 +1223,6 @@
               medications={currentRx.medications}
             />
 
-            {/* Chat Thread */}
             <div className="space-y-3">
               {messages.map((m) => (
                 <div key={m.id} className={`flex flex-col ${m.role === 'user' ? 'items-end' : 'items-start'}`}>
@@ -1118,7 +1240,6 @@
               ))}
             </div>
 
-            {/* Chips */}
             <div className="flex gap-1.5 overflow-x-auto no-scrollbar py-1">
               {['Tác dụng phụ?', 'Uống trước hay sau ăn?', 'Cần kiêng cữ gì?', 'Kết nối bác sĩ'].map((c) => (
                 <button
@@ -1131,7 +1252,6 @@
               ))}
             </div>
 
-            {/* Input Dock */}
             <div className="flex gap-2 bg-white p-2 rounded-2xl border border-[#ECE7DC] shadow-sm">
               <input
                 type="text"
@@ -1173,7 +1293,6 @@
               </div>
             </div>
 
-            {/* Slots */}
             <div className="bg-white rounded-3xl p-4 shadow-sm border border-[#ECE7DC] space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-xs font-bold text-[#1A201C]">Lịch nhắc uống thuốc hôm nay</span>
@@ -1206,7 +1325,6 @@
               </div>
             </div>
 
-            {/* Sleep card */}
             <div className="rounded-3xl bg-gradient-to-r from-[#D5EDAF] to-[#E9F6D6] p-4 text-[#0b3026] flex items-center justify-between shadow-sm">
               <div>
                 <span className="text-xs font-bold">Sleep Overview • Tuần này</span>
@@ -1219,10 +1337,174 @@
       }
 
       // ==========================================
+      // TAB 5: HỒ SƠ CÁ NHÂN (From Stitch VitaTrack - Hồ Sơ Cá Nhân + Emergent Authority)
+      // ==========================================
+      function ProfileTab({ user, onNavigate, onLogout }) {
+        const [copied, setCopied] = useState(false);
+        const [clinicianUnlocked, setClinicianUnlocked] = useState(false);
+
+        const copyId = () => {
+          const id = user?.vitaId || 'VT-3311045090';
+          if (navigator.clipboard) navigator.clipboard.writeText(id);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1500);
+        };
+
+        return (
+          <div className="space-y-4 pb-6">
+            {/* User Header Card */}
+            <section className="bg-white rounded-3xl p-4 shadow-sm border border-[#ECE7DC] space-y-3.5">
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <h2 className="text-lg font-extrabold text-[#0b3026] truncate">{user?.name || 'Michelle Nguyen'}</h2>
+                    <span className="px-1.5 py-0.5 rounded-full bg-[#cceda3] text-[#0b3026] text-[9px] font-bold">✓ Verified</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs text-[#687771]">
+                    <span className="font-mono font-semibold">ID: {user?.vitaId || 'VT-3311045090'}</span>
+                    <button onClick={copyId} className="text-[10px] underline text-[#0b3026] font-bold">
+                      {copied ? 'Đã chép!' : 'Sao chép'}
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    <span className="px-2.5 py-0.5 rounded-full bg-[#c7e89e] text-[#0b3026] text-[10px] font-extrabold">
+                      🔥 MỤC TIÊU: 75 NGÀY LIÊN TỤC
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-[#f0eee8] text-[#1A201C] text-[10px] font-medium truncate">
+                      ✉ {user?.email || 'michelle.ng@vitatrack.health'}
+                    </span>
+                  </div>
+                </div>
+                <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-[#24473b] to-[#8fb5a5] p-0.5 shrink-0">
+                  <div className="w-full h-full rounded-full bg-[#F5EFE4] flex items-center justify-center text-[#0b3026] font-extrabold text-base">
+                    {(user?.name || 'MN').split(' ').map(w => w[0]).join('').slice(0, 2)}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-12 gap-2">
+                <div className="col-span-5 py-2 px-2 rounded-2xl bg-[#0b3026] text-white text-center">
+                  <div className="text-[9px] font-bold tracking-wider">★ VITATRACK</div>
+                  <div className="text-[10px] font-extrabold text-[#cceda3]">PRO MEMBER</div>
+                </div>
+                <div className="col-span-5 py-2 px-2 rounded-2xl bg-[#f6f3ed] text-[#0b3026] text-center">
+                  <div className="text-[9px] font-extrabold">🏅 HUY HIỆU</div>
+                  <div className="text-[10px] font-bold text-[#687771]">81 ĐÃ ĐẠT</div>
+                </div>
+                <div className="col-span-2 rounded-2xl bg-[#f6f3ed] flex items-center justify-center text-sm">🎁</div>
+              </div>
+            </section>
+
+            {/* CORE DEMO MOMENT: Patient-Controlled Access via TideCloak Emergent Authority */}
+            <section className="rounded-3xl p-4 bg-gradient-to-br from-[#0b3026] to-[#24473b] text-white shadow-md space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#cceda3] block">
+                    TideCloak Emergent Authority
+                  </span>
+                  <span className="text-xs font-bold">Patient-Controlled Clinician Access</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setClinicianUnlocked(!clinicianUnlocked)}
+                  className={`px-3 py-1.5 rounded-full text-[10px] font-extrabold transition-all ${
+                    clinicianUnlocked ? 'bg-[#cceda3] text-[#0b3026]' : 'bg-white/15 text-white'
+                  }`}
+                >
+                  {clinicianUnlocked ? '🔓 Đã cấp quyền (15p)' : '🔒 Đang khóa bảo mật'}
+                </button>
+              </div>
+              <div className="rounded-2xl bg-black/25 p-2.5 text-[11px] space-y-1 font-mono border border-white/10">
+                <div className="flex justify-between">
+                  <span className="text-[#a9cfbf]">Dị ứng & Tương tác:</span>
+                  <span className="font-bold">{clinicianUnlocked ? 'Penicillin, Grapefruit' : '🔒 [LOCKED_BY_PATIENT]'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#a9cfbf]">Bệnh án nhạy cảm:</span>
+                  <span className="font-bold">{clinicianUnlocked ? 'Tăng HA độ 1 (I10)' : '🔒 [LOCKED_BY_PATIENT]'}</span>
+                </div>
+              </div>
+            </section>
+
+            {/* Section 1: Quản lý sức khỏe chuyên sâu */}
+            <section className="bg-white rounded-3xl p-3.5 shadow-sm border border-[#ECE7DC] space-y-2 text-xs">
+              <div onClick={() => onNavigate('ai')} className="flex items-center justify-between p-2 rounded-xl hover:bg-[#f6f3ed] cursor-pointer">
+                <div>
+                  <div className="font-bold text-[#1A201C]">🩺 AI Coach & Bác sĩ tư vấn</div>
+                  <div className="text-[11px] text-[#687771]">Kế hoạch dinh dưỡng & thuốc cá nhân</div>
+                </div>
+                <span>&rarr;</span>
+              </div>
+              <div className="h-[1px] bg-[#f0eee8]" />
+              <div className="flex items-center justify-between p-2 rounded-xl">
+                <div>
+                  <div className="font-bold text-[#1A201C]">⌚ Thiết bị đo đồng bộ (My Gear)</div>
+                  <div className="text-[11px] text-[#687771]">Apple Watch Series 9 • Omron Blood</div>
+                </div>
+                <span className="px-2 py-0.5 rounded-full bg-[#c7e89e] text-[#0b3026] text-[10px] font-bold">Online</span>
+              </div>
+              <div className="h-[1px] bg-[#f0eee8]" />
+              <div className="p-2 space-y-2">
+                <div className="font-bold text-[#1A201C]">🔗 Liên kết tài khoản thể thao (4 nền tảng)</div>
+                <div className="flex justify-around pt-1">
+                  {[
+                    { name: 'Adidas', bg: 'bg-[#1A1A1A] text-white' },
+                    { name: 'Apple', bg: 'bg-[#FF2D55] text-white' },
+                    { name: 'Garmin', bg: 'bg-[#c7e89e] text-[#0b3026]' },
+                    { name: 'Strava', bg: 'bg-[#FC4C02] text-white' },
+                  ].map((b) => (
+                    <div key={b.name} className="flex flex-col items-center gap-1">
+                      <div className={`w-9 h-9 rounded-full ${b.bg} flex items-center justify-center font-extrabold text-xs`}>{b.name[0]}</div>
+                      <span className="text-[9px] font-bold text-[#687771] uppercase">{b.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+
+            {/* Section 2: Hồ sơ bệnh án & Đăng xuất */}
+            <section className="bg-white rounded-3xl p-3.5 shadow-sm border border-[#ECE7DC] space-y-2 text-xs">
+              <div className="flex items-center justify-between p-2 rounded-xl">
+                <div>
+                  <div className="font-bold text-[#ba1a1a]">⚠️ Tiền sử dị ứng & Cảnh báo</div>
+                  <div className="text-[11px] text-[#687771]">Dị ứng Penicillin • Kiêng tương tác bưởi</div>
+                </div>
+              </div>
+              <div className="h-[1px] bg-[#f0eee8]" />
+              <div onClick={() => onNavigate('scanner')} className="flex items-center justify-between p-2 rounded-xl hover:bg-[#f6f3ed] cursor-pointer">
+                <div>
+                  <div className="font-bold text-[#1A201C]">💊 Lịch sử đơn thuốc đã quét</div>
+                  <div className="text-[11px] text-[#687771]">Đã lưu trữ 12 đơn thuốc • 2 liệu trình đang uống</div>
+                </div>
+                <span>&rarr;</span>
+              </div>
+              <div className="h-[1px] bg-[#f0eee8]" />
+              <button
+                type="button"
+                onClick={onLogout}
+                className="w-full flex items-center justify-between p-2.5 rounded-xl bg-[#ffdad6]/50 hover:bg-[#ffdad6] text-[#93000a] font-bold transition-colors"
+              >
+                <span>🚪 Đăng xuất / Chuyển tài khoản (Sign In / Sign Up)</span>
+                <span>&rarr;</span>
+              </button>
+            </section>
+          </div>
+        );
+      }
+
+      // ==========================================
       // ROOT APP COMPONENT (Mobile Container max-w-md)
       // ==========================================
       function App() {
-        const [activeTab, setActiveTab] = useState('scanner');
+        const [isAuthenticated, setIsAuthenticated] = useState(true);
+        const [userProfile, setUserProfile] = useState({
+          name: 'Michelle Nguyen',
+          phone: '+1 929 391 82 81',
+          email: 'michelle.ng@vitatrack.health',
+          vitaId: 'VT-3311045090',
+        });
+
+        const [activeTab, setActiveTab] = useState('dashboard');
         const [currentRx, setCurrentRx] = useState(SYNTHETIC_DATA.prescriptions.standardCardioRx);
         const [schedule, setSchedule] = useState([
           { id: '1', time: '08:00', name: 'Amlodipine Besylate', dosage: '5mg', instruction: '1 viên sau ăn sáng', taken: true },
@@ -1246,14 +1528,26 @@
           setSchedule(updated);
         };
 
+        const handleAuthenticated = (data) => {
+          setUserProfile((prev) => ({ ...prev, ...data }));
+          setIsAuthenticated(true);
+          setActiveTab('dashboard');
+        };
+
         return (
           <div className="min-h-screen py-0 sm:py-6 px-0 sm:px-4 flex flex-col items-center justify-center">
-            {/* Desktop Top Pill */}
+            {/* Desktop Top Pill with Quick Switch to Login/Signup */}
             <div className="hidden sm:flex items-center justify-between w-full max-w-md mb-3 px-3.5 py-1.5 rounded-full bg-[#0b3026] text-white text-xs shadow-md">
               <span className="flex items-center gap-1.5 font-bold text-[#cceda3]">
-                <IconShieldCheck className="w-4 h-4" /> VitaTrack Health × TideCloak
+                <IconShieldCheck className="w-4 h-4" /> VitaTrack × TideCloak
               </span>
-              <span className="text-[10px] text-[#a9cfbf] font-mono">Zero-Knowledge Proof Verified</span>
+              <button
+                type="button"
+                onClick={() => setIsAuthenticated(!isAuthenticated)}
+                className="px-2.5 py-0.5 rounded-full bg-white/15 hover:bg-white/25 text-[11px] font-bold text-[#cceda3] transition-colors"
+              >
+                {isAuthenticated ? '🔑 Xem trang Đăng Nhập / Đăng Ký' : '🏠 Vào thẳng Dashboard'}
+              </button>
             </div>
 
             {/* Phone Container: max-w-md mx-auto, rounded corners, subtle border, centered */}
@@ -1265,59 +1559,84 @@
                 <span className="text-[10px] text-[#4b662b]">5G • 100%</span>
               </div>
 
-              {/* Header */}
-              <header className="sticky top-0 z-30 bg-[#FBF8F2]/90 backdrop-blur-md border-b border-[#ECE7DC] px-5 h-14 flex items-center justify-between shrink-0">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-[#c4ebda] flex items-center justify-center text-[#0b3026] font-bold text-xs"><IconActivity className="w-4 h-4" /></div>
-                  <div>
-                    <h1 className="text-xs font-extrabold text-[#1A201C]">VitaTrack Health</h1>
-                    <span className="text-[9px] font-bold text-[#4b662b] block">Secured by TideCloak</span>
-                  </div>
+              {!isAuthenticated ? (
+                <div className="flex-1 overflow-y-auto no-scrollbar">
+                  <AuthScreen onAuthenticated={handleAuthenticated} />
                 </div>
-                <button onClick={() => setActiveTab('schedule')} className="w-8 h-8 rounded-full bg-[#F5EFE4] flex items-center justify-center text-[#1A201C]"><IconBell className="w-4 h-4" /></button>
-              </header>
+              ) : (
+                <>
+                  {/* Header */}
+                  <header className="sticky top-0 z-30 bg-[#FBF8F2]/90 backdrop-blur-md border-b border-[#ECE7DC] px-5 h-14 flex items-center justify-between shrink-0">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-[#c4ebda] flex items-center justify-center text-[#0b3026] font-bold text-xs"><IconActivity className="w-4 h-4" /></div>
+                      <div>
+                        <h1 className="text-xs font-extrabold text-[#1A201C]">VitaTrack Health</h1>
+                        <span className="text-[9px] font-bold text-[#4b662b] block">Secured by TideCloak</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => setActiveTab('schedule')} className="w-8 h-8 rounded-full bg-[#F5EFE4] flex items-center justify-center text-[#1A201C]"><IconBell className="w-4 h-4" /></button>
+                      <button
+                        onClick={() => setActiveTab('profile')}
+                        title="Hồ sơ cá nhân"
+                        className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${activeTab === 'profile' ? 'bg-[#cceda3] text-[#0b3026] ring-2 ring-[#0b3026]' : 'bg-[#0b3026] text-white'}`}
+                      >
+                        <IconUser className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </header>
 
-              {/* Main Content Area */}
-              <main className="flex-1 overflow-y-auto no-scrollbar px-4 pt-3.5 pb-24">
-                {activeTab === 'dashboard' && <DashboardTab onNavigate={setActiveTab} />}
-                {activeTab === 'scanner' && (
-                  <ScannerTab
-                    currentRx={currentRx}
-                    onUpdateRx={setCurrentRx}
-                    onNavigate={setActiveTab}
-                    onSaveSchedule={handleSaveSchedule}
-                  />
-                )}
-                {activeTab === 'ai' && <AiAssistantTab currentRx={currentRx} />}
-                {activeTab === 'schedule' && <ScheduleTab schedule={schedule} onToggle={handleToggleSchedule} />}
-              </main>
+                  {/* Main Content Area */}
+                  <main className="flex-1 overflow-y-auto no-scrollbar px-4 pt-3.5 pb-24">
+                    {activeTab === 'dashboard' && <DashboardTab user={userProfile} onNavigate={setActiveTab} />}
+                    {activeTab === 'scanner' && (
+                      <ScannerTab
+                        currentRx={currentRx}
+                        onUpdateRx={setCurrentRx}
+                        onNavigate={setActiveTab}
+                        onSaveSchedule={handleSaveSchedule}
+                      />
+                    )}
+                    {activeTab === 'ai' && <AiAssistantTab currentRx={currentRx} />}
+                    {activeTab === 'schedule' && <ScheduleTab schedule={schedule} onToggle={handleToggleSchedule} />}
+                    {activeTab === 'profile' && (
+                      <ProfileTab
+                        user={userProfile}
+                        onNavigate={setActiveTab}
+                        onLogout={() => setIsAuthenticated(false)}
+                      />
+                    )}
+                  </main>
 
-              {/* 4-Tab Bottom Navigation */}
-              <div className="absolute bottom-3 left-0 right-0 z-40 px-4 pointer-events-none">
-                <nav className="pointer-events-auto w-full bg-white/95 backdrop-blur-md rounded-full p-1.5 shadow-xl border border-[#ECE7DC]">
-                  <div className="grid grid-cols-4 gap-1">
-                    {[
-                      { id: 'dashboard', label: 'Dashboard', icon: IconActivity },
-                      { id: 'scanner', label: 'Quét Đơn', icon: IconScanLine },
-                      { id: 'ai', label: 'AI Trợ Lý', icon: IconSparkles },
-                      { id: 'schedule', label: 'Lịch Trình', icon: IconCalendar }
-                    ].map((tab) => {
-                      const Icon = tab.icon;
-                      const active = activeTab === tab.id;
-                      return (
-                        <button
-                          key={tab.id}
-                          onClick={() => setActiveTab(tab.id)}
-                          className={`flex flex-col items-center justify-center py-2 rounded-full transition-all ${active ? 'bg-[#c7e89e] text-[#0b3026] font-extrabold shadow-sm' : 'text-[#687771] hover:text-[#1A201C]'}`}
-                        >
-                          <Icon className="w-4 h-4" />
-                          <span className="text-[10px] mt-0.5">{tab.label}</span>
-                        </button>
-                      );
-                    })}
+                  {/* 5-Tab Bottom Navigation (Matching Stitch Profile & App Navigation) */}
+                  <div className="absolute bottom-3 left-0 right-0 z-40 px-3 pointer-events-none">
+                    <nav className="pointer-events-auto w-full bg-white/95 backdrop-blur-md rounded-full p-1.5 shadow-xl border border-[#ECE7DC]">
+                      <div className="grid grid-cols-5 gap-0.5">
+                        {[
+                          { id: 'dashboard', label: 'Home', icon: IconActivity },
+                          { id: 'scanner', label: 'Scan Rx', icon: IconScanLine },
+                          { id: 'ai', label: 'AI Health', icon: IconSparkles },
+                          { id: 'schedule', label: 'Trends', icon: IconCalendar },
+                          { id: 'profile', label: 'Profile', icon: IconUser }
+                        ].map((tab) => {
+                          const Icon = tab.icon;
+                          const active = activeTab === tab.id;
+                          return (
+                            <button
+                              key={tab.id}
+                              onClick={() => setActiveTab(tab.id)}
+                              className={`flex flex-col items-center justify-center py-2 rounded-full transition-all ${active ? 'bg-[#c7e89e] text-[#0b3026] font-extrabold shadow-sm' : 'text-[#687771] hover:text-[#1A201C]'}`}
+                            >
+                              <Icon className="w-4 h-4" />
+                              <span className="text-[9.5px] mt-0.5">{tab.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </nav>
                   </div>
-                </nav>
-              </div>
+                </>
+              )}
             </div>
           </div>
         );
