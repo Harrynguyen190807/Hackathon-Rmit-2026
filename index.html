@@ -1,18 +1,777 @@
 <!DOCTYPE html>
-<html lang="vi" class="h-full bg-[#E9E5DC]">
+<html lang="vi" class="h-full">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>VitaTrack Health — Privacy-Preserving AI Companion (Secured by TideCloak)</title>
+    <title>VitaTrack Health — Privacy-Preserving AI Health Companion (Secured by TideCloak)</title>
+    
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..800;1,9..40,400..800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              'surface-variant': '#e5e2dc',
+              'secondary-fixed': '#cceda3',
+              'on-tertiary-container': '#e59c66',
+              'on-primary': '#ffffff',
+              'alert-warm-peach': '#F3A871',
+              'secondary-fixed-dim': '#b1d189',
+              'gradient-meadow-start': '#D5EDAF',
+              'gradient-meadow-end': '#E9F6D6',
+              'on-background': '#1c1c18',
+              'error-container': '#ffdad6',
+              'surface': '#fcf9f3',
+              'surface-card': '#FFFFFF',
+              'primary': '#0b3026',
+              'border-subtle': '#ECE7DC',
+              'error': '#ba1a1a',
+              'surface-canvas': '#FBF8F2',
+              'secondary': '#4b662b',
+              'surface-container': '#f0eee8',
+              'status-sleep': '#E9C46A',
+              'text-primary': '#1A201C',
+              'text-muted': '#687771',
+              'alert-critical': '#FF6B6B',
+              'alert-warning-soft': '#E58B88',
+              'secondary-container': '#c7e89e',
+              'primary-container': '#24473b',
+              'surface-input': '#F5EFE4',
+            },
+            fontFamily: {
+              sans: ['Plus Jakarta Sans', 'DM Sans', 'sans-serif'],
+            },
+          },
+        },
+      };
+    </script>
+
+    <!-- React 18 + ReactDOM + Babel Standalone for direct file:/// execution -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+      body {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      @keyframes scanLaser {
+        0% { top: 12%; opacity: 0.6; }
+        50% { top: 84%; opacity: 1; }
+        100% { top: 12%; opacity: 0.6; }
+      }
+      .animate-scan-laser {
+        animation: scanLaser 2.4s ease-in-out infinite;
+      }
+    </style>
   </head>
-  <body class="min-h-screen bg-gradient-to-br from-[#EDE9DF] via-[#E5E1D6] to-[#D8E2DC] text-[#1A201C] antialiased selection:bg-[#cceda3] selection:text-[#0b3026]">
+  <body class="min-h-screen bg-gradient-to-br from-[#EDE9DF] via-[#E5E1D6] to-[#D8E2DC] text-[#1A201C] antialiased">
     <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+
+    <script type="text/babel">
+      const { useState, useMemo, useEffect, useRef } = React;
+
+      // ==========================================
+      // ICON COMPONENTS (Pure SVG, Zero-Dependency)
+      // ==========================================
+      const IconShieldCheck = ({ className = "w-5 h-5" }) => (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+      );
+      const IconHeart = ({ className = "w-5 h-5", fill = "none" }) => (
+        <svg className={className} fill={fill} viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
+      );
+      const IconActivity = ({ className = "w-5 h-5" }) => (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+      );
+      const IconFlame = ({ className = "w-5 h-5", fill = "none" }) => (
+        <svg className={className} fill={fill} viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343a7.975 7.975 0 012.343 5.657c0 2.122-.843 4.157-2.342 5.657z" /></svg>
+      );
+      const IconMoon = ({ className = "w-5 h-5" }) => (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+      );
+      const IconScanLine = ({ className = "w-5 h-5" }) => (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3 7V5a2 2 0 012-2h2m10 0h2a2 2 0 012 2v2m0 10v2a2 2 0 01-2 2h-2m-10 0H5a2 2 0 01-2-2v-2M7 12h10" /></svg>
+      );
+      const IconSparkles = ({ className = "w-5 h-5" }) => (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
+      );
+      const IconCalendar = ({ className = "w-5 h-5" }) => (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+      );
+      const IconBell = ({ className = "w-5 h-5" }) => (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+      );
+      const IconPill = ({ className = "w-5 h-5" }) => (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>
+      );
+      const IconCamera = ({ className = "w-5 h-5" }) => (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><circle cx="12" cy="13" r="4" /></svg>
+      );
+      const IconBot = ({ className = "w-5 h-5" }) => (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+      );
+      const IconAlertTriangle = ({ className = "w-5 h-5" }) => (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+      );
+      const IconCheckCircle = ({ className = "w-5 h-5" }) => (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+      );
+
+      // ==========================================
+      // SYNTHETIC DATA & TIDECLOAK LAYER
+      // ==========================================
+      const SYNTHETIC_DATA = {
+        asclepiosScore: 88,
+        heartRate: 70,
+        bloodPressure: '120/78',
+        calories: 2000,
+        sleepHours: 8.2,
+        prescriptions: {
+          standardCardioRx: {
+            title: 'Đơn khám Tim mạch • BV ĐH Y Dược TP.HCM',
+            confidence: '98.4%',
+            medications: [
+              { id: '1', name: 'Amlodipine Besylate', dosage: '5mg', category: 'Hạ huyết áp', time: '08:00', period: 'Mỗi sáng', instruction: '1 viên sau ăn sáng' },
+              { id: '2', name: 'Metformin Hydrochloride', dosage: '500mg', category: 'Tiểu đường', time: '19:00', period: 'Mỗi tối', instruction: '1 viên cùng bữa tối' },
+              { id: '3', name: 'Atorvastatin Calcium', dosage: '10mg', category: 'Mỡ máu', time: '21:30', period: 'Trước ngủ', instruction: '1 viên trước khi ngủ' }
+            ],
+            interaction: {
+              severity: 'WARNING',
+              title: 'Cảnh báo tương tác Dược - Thực phẩm',
+              badge: 'Mức độ nhẹ • CYP3A4',
+              desc: 'Tránh dùng chung Amlodipine với bưởi chùm (Grapefruit) vì có thể làm tăng nồng độ thuốc trong huyết tương.'
+            }
+          },
+          criticalConflictRx: {
+            title: 'Đơn thuốc Đa khoa (Phát hiện Xung đột Nặng)',
+            confidence: '99.1%',
+            medications: [
+              { id: 'c1', name: 'Atorvastatin Calcium', dosage: '20mg', category: 'Hạ mỡ máu', time: '21:30', period: 'Trước ngủ', instruction: '1 viên buổi tối' },
+              { id: 'c2', name: 'Clarithromycin', dosage: '500mg', category: 'Kháng sinh', time: '08:00', period: 'Sáng & Tối', instruction: '1 viên x 2 lần/ngày' },
+              { id: 'c3', name: 'Amlodipine Besylate', dosage: '5mg', category: 'Hạ huyết áp', time: '08:00', period: 'Mỗi sáng', instruction: '1 viên sau ăn sáng' }
+            ],
+            interaction: {
+              severity: 'CRITICAL',
+              title: 'Xung đột nguy hiểm: Clarithromycin + Atorvastatin',
+              badge: 'Nghiêm trọng • Chống chỉ định',
+              desc: 'Clarithromycin ức chế mạnh CYP3A4 làm tăng nồng độ Atorvastatin gấp 4 lần, nguy cơ tiêu cơ vân cấp (Rhabdomyolysis) và suy thận. Khuyến nghị tạm ngưng Statin!'
+            }
+          }
+        }
+      };
+
+      // ==========================================
+      // TIDECLOAK BADGE & INSPECTOR MODAL
+      // ==========================================
+      function TideCloakBadge({ context = 'Zero-Trust Edge Encryption' }) {
+        const [open, setOpen] = useState(false);
+        return (
+          <>
+            <div
+              onClick={() => setOpen(true)}
+              className="w-full rounded-2xl bg-gradient-to-r from-[#0b3026] via-[#173d31] to-[#24473b] p-3 text-white shadow-md border border-[#a9cfbf]/30 cursor-pointer hover:scale-[1.01] transition-transform"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="relative w-8 h-8 rounded-xl bg-[#cceda3]/20 border border-[#cceda3]/40 flex items-center justify-center shrink-0">
+                    <IconShieldCheck className="w-4 h-4 text-[#cceda3]" />
+                    <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-[#cceda3] animate-ping" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[11px] font-extrabold uppercase text-[#cceda3]">Secured by TideCloak</span>
+                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-white/15 text-white font-bold">ZKP Verified</span>
+                    </div>
+                    <p className="text-[11px] text-[#e5e2dc] truncate">{context}</p>
+                  </div>
+                </div>
+                <span className="text-[11px] text-[#cceda3] font-bold shrink-0">Inspect &rarr;</span>
+              </div>
+            </div>
+
+            {open && (
+              <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+                <div className="w-full max-w-sm rounded-3xl bg-[#FBF8F2] border border-[#ECE7DC] shadow-2xl overflow-hidden text-[#1A201C]">
+                  <div className="bg-[#0b3026] text-white p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <IconShieldCheck className="w-5 h-5 text-[#cceda3]" />
+                      <h3 className="text-sm font-bold">TideCloak Zero-Trust Inspector</h3>
+                    </div>
+                    <button onClick={() => setOpen(false)} className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center font-bold">&times;</button>
+                  </div>
+                  <div className="p-4 space-y-3 text-xs max-h-[70vh] overflow-y-auto">
+                    <div className="bg-white p-3 rounded-2xl border border-[#ECE7DC] space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-[#0b3026]">ZKP Attestation Status</span>
+                        <span className="px-2 py-0.5 rounded-full bg-[#cceda3] text-[#0b3026] font-bold text-[10px]">VERIFIED</span>
+                      </div>
+                      <p className="text-[#687771] text-[11px]">Hồ sơ y tế được mã hóa tại Client trước khi gửi tới AI. Không lộ danh tính người dùng.</p>
+                    </div>
+
+                    <div className="bg-white p-3 rounded-2xl border border-[#ECE7DC] font-mono text-[11px] space-y-1">
+                      <div className="flex justify-between"><span className="text-[#687771]">Algorithm:</span><span className="font-bold">AES-256-GCM + MPC</span></div>
+                      <div className="flex justify-between"><span className="text-[#687771]">ZK Signature:</span><span className="text-[#4b662b] font-bold">0x8f4e9b21...c71a04</span></div>
+                      <div className="flex justify-between"><span className="text-[#687771]">Ciphertext:</span><span>0x4d92a07f...90e1b2</span></div>
+                      <div className="flex justify-between"><span className="text-[#687771]">Raw PII Exposed:</span><span className="text-[#4b662b] font-bold">FALSE (0 bytes)</span></div>
+                    </div>
+
+                    <div className="bg-[#1A201C] text-[#cceda3] p-3 rounded-2xl font-mono text-[10px]">
+                      <div className="text-white font-bold mb-1">Sanitized AI Context:</div>
+                      <pre className="whitespace-pre-wrap leading-relaxed text-[#e5e2dc]">{JSON.stringify({
+                        zkSessionDid: 'did:tide:zk:0x9f8c...3e1b44a0',
+                        patientIdentity: '[REDACTED_BY_TIDECLOAK_EDGE]',
+                        tokens: ['Amlodipine 5mg', 'Metformin 500mg', 'Atorvastatin 10mg']
+                      }, null, 2)}</pre>
+                    </div>
+
+                    <button onClick={() => setOpen(false)} className="w-full py-2.5 rounded-full bg-[#24473b] text-white font-bold text-xs">Đóng bảng kiểm chứng</button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        );
+      }
+
+      // ==========================================
+      // TAB 1: DASHBOARD
+      // ==========================================
+      function DashboardTab({ onNavigate }) {
+        return (
+          <div className="space-y-4 pb-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-[#24473b] to-[#8fb5a5] p-0.5 shadow-sm">
+                  <div className="w-full h-full rounded-full bg-[#F5EFE4] flex items-center justify-center text-[#0b3026] font-extrabold">MN</div>
+                </div>
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-lg font-bold text-[#1A201C]">Hey, Michelle</span>
+                    <span>👋</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs">
+                    <span className="px-2 py-0.5 rounded-full bg-[#c7e89e] text-[#0b3026] font-bold">+ 88%</span>
+                    <span className="text-[#687771]">• Pro Member</span>
+                  </div>
+                </div>
+              </div>
+              <button onClick={() => onNavigate('schedule')} className="w-10 h-10 rounded-2xl bg-white shadow-sm flex items-center justify-center text-[#1A201C]">&bull;&bull;&bull;</button>
+            </div>
+
+            <TideCloakBadge context="Biometric Telemetry Encrypted on Device" />
+
+            <div className="grid grid-cols-2 gap-2.5">
+              <button onClick={() => onNavigate('scanner')} className="flex items-center justify-center gap-2 py-3 px-3 rounded-2xl bg-[#0b3026] text-white shadow-md active:scale-95 transition-transform">
+                <IconScanLine className="w-4 h-4 text-[#cceda3]" />
+                <span className="text-xs font-bold">Quét Đơn Thuốc</span>
+              </button>
+              <button onClick={() => onNavigate('ai')} className="flex items-center justify-center gap-2 py-3 px-3 rounded-2xl bg-[#cceda3] text-[#0b3026] shadow-md active:scale-95 transition-transform">
+                <IconSparkles className="w-4 h-4 text-[#0b3026]" />
+                <span className="text-xs font-bold">Hỏi Bác Sĩ AI</span>
+              </button>
+            </div>
+
+            {/* Asclepios Score Card */}
+            <div className="rounded-3xl bg-white p-5 shadow-sm border border-[#ECE7DC] flex items-center justify-between relative overflow-hidden">
+              <div className="max-w-[70%]">
+                <span className="text-base font-bold text-[#1A201C]">Asclepios Score</span>
+                <p className="text-xs text-[#687771] mt-1">Dựa trên sinh trắc học mỗi ngày, sức khỏe của bạn đạt mức tối ưu.</p>
+                <div className="mt-2.5 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#f6f3ed] text-[#4b662b] text-[10px] font-bold">
+                  <span className="w-2 h-2 rounded-full bg-[#4b662b]"></span> OPTIMAL VITALITY
+                </div>
+              </div>
+              <div className="w-14 h-14 rounded-2xl bg-[#cceda3] flex items-center justify-center text-2xl font-extrabold text-[#0b3026] shadow-md">88</div>
+            </div>
+
+            {/* Bento Grid */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-3xl bg-white p-4 shadow-sm border border-[#ECE7DC] flex flex-col justify-between">
+                <div className="flex items-center justify-between">
+                  <div className="w-8 h-8 rounded-full bg-[#c4ebda] flex items-center justify-center text-[#0b3026]"><IconHeart className="w-4 h-4" fill="#0b3026" /></div>
+                  <span className="px-2 py-0.5 rounded-full bg-[#f6f3ed] text-[#4b662b] text-[10px] font-bold">NORMAL</span>
+                </div>
+                <div className="my-2">
+                  <span className="text-xs font-bold text-[#1A201C]">Nhịp tim</span>
+                  <div className="text-xl font-extrabold text-[#1A201C]">70 <span className="text-xs font-normal text-[#687771]">bpm</span></div>
+                </div>
+                <svg className="w-full h-8" fill="none" viewBox="0 0 140 40">
+                  <path d="M5 20 L40 20 L48 8 L56 32 L64 4 L72 24 L80 20 L135 20" stroke="#24473b" strokeWidth="2.2" strokeLinecap="round" />
+                </svg>
+              </div>
+
+              <div className="rounded-3xl bg-white p-4 shadow-sm border border-[#ECE7DC] flex flex-col justify-between">
+                <div className="flex items-center justify-between">
+                  <div className="w-8 h-8 rounded-full bg-[#F3A871]/25 flex items-center justify-center text-[#663304]"><IconActivity className="w-4 h-4" /></div>
+                  <span className="px-2 py-0.5 rounded-full bg-[#F3A871]/20 text-[#663304] text-[10px] font-bold">RESTING</span>
+                </div>
+                <div className="my-2">
+                  <span className="text-xs font-bold text-[#1A201C]">Huyết áp</span>
+                  <div className="text-xl font-extrabold text-[#1A201C]">120/78 <span className="text-xs font-normal text-[#687771]">mmHg</span></div>
+                </div>
+                <svg className="w-full h-8" fill="none" viewBox="0 0 140 40">
+                  <path d="M5 25 Q35 15 65 22 T135 20" stroke="#E58B88" strokeWidth="2.2" strokeLinecap="round" />
+                </svg>
+              </div>
+            </div>
+
+            {/* Calories Card */}
+            <div className="rounded-3xl bg-white p-4 shadow-sm border border-[#ECE7DC] flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-[#F3A871]/20 flex items-center justify-center text-[#F3A871]"><IconFlame className="w-5 h-5" fill="#F3A871" /></div>
+                <div>
+                  <div className="text-xs font-bold text-[#1A201C]">Calories Burned</div>
+                  <div className="text-[11px] text-[#687771]">Mục tiêu 2,200 kcal</div>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-lg font-extrabold text-[#1A201C]">2,000 <span className="text-xs font-normal text-[#687771]">kcal</span></div>
+                <div className="w-20 h-1.5 bg-[#f0eee8] rounded-full overflow-hidden mt-1"><div className="w-[90%] h-full bg-[#b1d189] rounded-full"></div></div>
+              </div>
+            </div>
+
+            {/* Sleep Banner */}
+            <div className="rounded-3xl bg-gradient-to-r from-[#D5EDAF] to-[#E9F6D6] p-4 shadow-sm flex items-center justify-between text-[#0b3026]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-white/80 flex items-center justify-center"><IconMoon className="w-5 h-5 text-[#0b3026]" /></div>
+                <div>
+                  <div className="text-xs font-bold">Sleep Quality</div>
+                  <div className="text-[11px] opacity-80">8.2 hrs • REM 2.4 hrs</div>
+                </div>
+              </div>
+              <span className="px-2.5 py-1 rounded-full bg-[#0b3026] text-white text-[10px] font-bold">DEEP REST</span>
+            </div>
+          </div>
+        );
+      }
+
+      // ==========================================
+      // TAB 2: QUÉT ĐƠN THUỐC
+      // ==========================================
+      function ScannerTab({ onNavigate, onSaveSchedule }) {
+        const [selectedRx, setSelectedRx] = useState('standardCardioRx');
+        const [isScanning, setIsScanning] = useState(false);
+        const [saved, setSaved] = useState(false);
+
+        const rx = SYNTHETIC_DATA.prescriptions[selectedRx];
+        const isCritical = rx.interaction.severity === 'CRITICAL';
+
+        const handleSwitchRx = (key) => {
+          setIsScanning(true);
+          setTimeout(() => {
+            setSelectedRx(key);
+            setIsScanning(false);
+          }, 500);
+        };
+
+        const handleSave = () => {
+          onSaveSchedule(rx.medications);
+          setSaved(true);
+          setTimeout(() => setSaved(false), 2000);
+        };
+
+        return (
+          <div className="space-y-4 pb-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-[#1A201C]">Quét Đơn Thuốc AI</h2>
+                <p className="text-xs text-[#687771]">OCR nhận diện & kiểm tra tương tác tại Edge</p>
+              </div>
+              <span className="px-2.5 py-1 rounded-full bg-[#cceda3] text-[#0b3026] text-[10px] font-bold">OCR 98.4%</span>
+            </div>
+
+            <TideCloakBadge context="Prescription OCR Sanitized Before AI Analysis" />
+
+            {/* Camera Viewfinder */}
+            <div className="rounded-3xl bg-white p-3 shadow-sm border border-[#ECE7DC]">
+              <div className="relative w-full h-56 rounded-2xl overflow-hidden bg-[#163329] p-3 flex flex-col justify-between">
+                {/* Simulated Rx Sheet */}
+                <div className="relative z-10 bg-[#FBF8F2]/95 rounded-xl p-3 border border-[#ECE7DC] text-[#1A201C] space-y-1.5 shadow-inner">
+                  <div className="flex justify-between items-center text-[10px] font-bold border-b border-[#ECE7DC] pb-1">
+                    <span className="text-[#24473b]">{rx.title}</span>
+                    <span className="text-[#687771] font-mono">[PII_REDACTED]</span>
+                  </div>
+                  <div className="space-y-1 text-xs">
+                    {rx.medications.map((m, i) => (
+                      <div key={m.id} className="flex justify-between bg-white px-2 py-1 rounded border border-[#ECE7DC]">
+                        <span className="font-bold text-[#0b3026]">{i+1}. {m.name} ({m.dosage})</span>
+                        <span className="font-mono text-[10px] text-[#687771]">{m.time}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Laser scan */}
+                <div className="absolute left-2 right-2 h-0.5 bg-gradient-to-r from-transparent via-[#cceda3] to-transparent shadow-[0_0_10px_#cceda3] animate-scan-laser pointer-events-none z-20" />
+
+                {/* Reticle */}
+                <div className="absolute inset-2 border-2 border-[#cceda3]/40 rounded-2xl pointer-events-none z-10" />
+
+                <div className="relative z-20 flex justify-center">
+                  <button onClick={() => handleSwitchRx(selectedRx)} className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[#0b3026] shadow-md active:scale-90 transition-transform">
+                    <IconCamera className="w-5 h-5 text-[#24473b]" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Sample Switcher */}
+              <div className="grid grid-cols-2 gap-2 mt-2.5">
+                <button
+                  onClick={() => handleSwitchRx('standardCardioRx')}
+                  className={`py-2 px-2 rounded-xl text-xs font-bold transition-colors ${selectedRx === 'standardCardioRx' ? 'bg-[#c7e89e] text-[#0b3026]' : 'bg-[#F5EFE4] text-[#687771]'}`}
+                >
+                  Mẫu 1: Tim Mạch (Vàng)
+                </button>
+                <button
+                  onClick={() => handleSwitchRx('criticalConflictRx')}
+                  className={`py-2 px-2 rounded-xl text-xs font-bold transition-colors ${selectedRx === 'criticalConflictRx' ? 'bg-[#ffdad6] text-[#93000a] ring-1 ring-[#ba1a1a]/30' : 'bg-[#F5EFE4] text-[#687771]'}`}
+                >
+                  Mẫu 2: Xung Đột Nặng (Đỏ)
+                </button>
+              </div>
+            </div>
+
+            {/* Interaction Banner */}
+            <div className={`rounded-2xl p-4 border flex items-start gap-3 ${isCritical ? 'bg-[#ffdad6] text-[#93000a] border-[#ba1a1a]/30' : 'bg-[#ffdcc5] text-[#462000] border-[#F3A871]/50'}`}>
+              <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${isCritical ? 'bg-[#ba1a1a] text-white' : 'bg-[#F3A871] text-white'}`}>
+                <IconAlertTriangle className="w-5 h-5" />
+              </div>
+              <div className="text-xs space-y-0.5">
+                <div className="flex items-center justify-between flex-wrap">
+                  <span className="font-extrabold">{rx.interaction.title}</span>
+                  <span className="text-[9px] px-1.5 py-0.5 rounded font-extrabold uppercase bg-white/60">{rx.interaction.badge}</span>
+                </div>
+                <p className="leading-relaxed opacity-95">{rx.interaction.desc}</p>
+              </div>
+            </div>
+
+            {/* Medication List */}
+            <div className="space-y-2">
+              <h3 className="text-xs font-bold text-[#1A201C] px-1">Danh sách bóc tách ({rx.medications.length} loại thuốc)</h3>
+              {rx.medications.map((m) => (
+                <div key={m.id} className="rounded-2xl bg-white p-3.5 shadow-sm border border-[#ECE7DC] flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-[#f6f3ed] flex items-center justify-center text-[#24473b]"><IconPill className="w-4 h-4" /></div>
+                    <div>
+                      <div className="text-xs font-bold text-[#1A201C]">{m.name} ({m.dosage})</div>
+                      <div className="text-[11px] text-[#687771]">{m.instruction}</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-sm font-extrabold text-[#0b3026]">{m.time}</span>
+                    <span className="block text-[9px] text-[#687771] uppercase font-bold">{m.period}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="space-y-2 pt-1">
+              <button
+                onClick={handleSave}
+                className={`w-full py-3.5 rounded-full text-xs font-bold text-white shadow-md transition-all ${saved ? 'bg-[#4b662b]' : 'bg-[#24473b] hover:bg-[#0b3026]'}`}
+              >
+                {saved ? '✓ Đã đồng bộ vào Lịch nhắc thuốc!' : 'Lưu lịch uống thuốc tự động (08:00, 19:00, 21:30)'}
+              </button>
+              <button
+                onClick={() => onNavigate('ai')}
+                className="w-full py-3 rounded-full text-xs font-bold text-[#0b3026] bg-[#F5EFE4] hover:bg-[#e5e2dc] transition-colors"
+              >
+                Hỏi Bác Sĩ AI giải mã đơn này &rarr;
+              </button>
+            </div>
+          </div>
+        );
+      }
+
+      // ==========================================
+      // TAB 3: AI ASSISTANT
+      // ==========================================
+      function AiAssistantTab() {
+        const [messages, setMessages] = useState([
+          { id: 1, role: 'user', text: 'Thuốc này có gây tác dụng phụ gì phổ biến không?' },
+          {
+            id: 2,
+            role: 'ai',
+            text: 'Dựa trên hồ sơ dược lý ẩn danh (Zero-Knowledge Attested), Amlodipine 5mg và Atorvastatin có thể gây một số phản ứng nhẹ:',
+            details: [
+              'Tác dụng phụ thường gặp: Buồn ngủ nhẹ, đỏ bừng mặt hoặc hơi phù cổ chân vào chiều tối (thường giảm sau 1-2 tuần).',
+              'Xử trí khi quên liều: Nếu còn trên 12 tiếng tới liều kế tiếp thì uống ngay. Tuyệt đối KHÔNG uống gấp đôi liều để bù.'
+            ]
+          }
+        ]);
+        const [input, setInput] = useState('');
+
+        const handleSend = (text) => {
+          const q = (text || input).trim();
+          if (!q) return;
+          const userM = { id: Date.now(), role: 'user', text: q };
+          setMessages((prev) => [...prev, userM]);
+          if (!text) setInput('');
+
+          setTimeout(() => {
+            let replyText = `Đã phân tích câu hỏi "${q}" trên vùng dữ liệu mã hóa TideCloak Edge.`;
+            let details = null;
+            if (q.includes('ăn') || q.includes('khi nào')) {
+              details = [
+                '08:00 Sáng: Amlodipine 5mg sau ăn sáng 15 phút với ly nước đầy.',
+                '19:00 Tối: Metformin 500mg ngay trong bữa tối để giảm cồn cào dạ dày.',
+                '21:30 Đêm: Atorvastatin 10mg trước khi đi ngủ.'
+              ];
+            } else if (q.includes('kiêng') || q.includes('bưởi')) {
+              details = [
+                'Tuyệt đối kiêng Nước ép bưởi chùm (Grapefruit) do ức chế enzyme CYP3A4.',
+                'Hạn chế muối (< 5g/ngày) và uống đủ 2L nước lọc.'
+              ];
+            } else {
+              details = ['Chỉ số sinh trắc học hiện tại (HA 120/78, Nhịp tim 70) đang ở mức an toàn. Hãy duy trì lịch uống đúng giờ.'];
+            }
+            setMessages((prev) => [...prev, { id: Date.now() + 1, role: 'ai', text: replyText, details }]);
+          }, 350);
+        };
+
+        return (
+          <div className="space-y-3.5 pb-6">
+            <div className="flex items-center justify-between bg-white p-3 rounded-2xl border border-[#ECE7DC] shadow-sm">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-[#c7e89e] flex items-center justify-center text-[#0b3026]"><IconBot className="w-4 h-4" /></div>
+                <div>
+                  <div className="text-xs font-bold text-[#1A201C]">Asclepios AI Bác Sĩ</div>
+                  <div className="text-[10px] text-[#687771]">Trợ lý dược lâm sàng 24/7</div>
+                </div>
+              </div>
+              <span className="px-2 py-0.5 rounded-full bg-[#f6f3ed] text-[#4b662b] text-[10px] font-bold">E2E ZKP</span>
+            </div>
+
+            <TideCloakBadge context="Zero-Knowledge Proof Verified • Anonymous AI Context" />
+
+            {/* Chat Thread */}
+            <div className="space-y-3">
+              {messages.map((m) => (
+                <div key={m.id} className={`flex flex-col ${m.role === 'user' ? 'items-end' : 'items-start'}`}>
+                  <div className={`p-3.5 rounded-2xl text-xs max-w-[88%] leading-relaxed ${m.role === 'user' ? 'bg-[#24473b] text-white rounded-tr-sm' : 'bg-white text-[#1A201C] border border-[#ECE7DC] rounded-tl-sm shadow-sm'}`}>
+                    <p>{m.text}</p>
+                    {m.details && (
+                      <div className="mt-2 space-y-1.5 pt-1.5 border-t border-[#ECE7DC]">
+                        {m.details.map((d, i) => (
+                          <div key={i} className="text-[11px] text-[#414845] bg-[#f6f3ed] p-2 rounded-xl">• {d}</div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Chips */}
+            <div className="flex gap-1.5 overflow-x-auto no-scrollbar py-1">
+              {['Tác dụng phụ?', 'Uống trước hay sau ăn?', 'Cần kiêng cữ gì?', 'Kết nối bác sĩ'].map((c) => (
+                <button
+                  key={c}
+                  onClick={() => handleSend(c)}
+                  className="shrink-0 bg-white border border-[#ECE7DC] px-3 py-1.5 rounded-full text-xs font-bold text-[#0b3026] hover:bg-[#f6f3ed]"
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+
+            {/* Input Dock */}
+            <div className="flex gap-2 bg-white p-2 rounded-2xl border border-[#ECE7DC] shadow-sm">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                placeholder="Hỏi AI bảo mật về đơn thuốc..."
+                className="flex-1 text-xs outline-none px-2"
+              />
+              <button onClick={() => handleSend()} className="w-8 h-8 rounded-full bg-[#24473b] text-white flex items-center justify-center text-xs font-bold">&uarr;</button>
+            </div>
+          </div>
+        );
+      }
+
+      // ==========================================
+      // TAB 4: LỊCH TRÌNH (08:00, 19:00, 21:30)
+      // ==========================================
+      function ScheduleTab({ schedule, onToggle }) {
+        const completed = schedule.filter((s) => s.taken).length;
+        const adherence = Math.round((completed / schedule.length) * 100);
+
+        return (
+          <div className="space-y-4 pb-6">
+            <div className="bg-white rounded-3xl p-4 shadow-sm border border-[#ECE7DC]">
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-sm font-bold text-[#1A201C]">Tháng 10, 2026</span>
+                <span className="text-xs font-bold text-[#4b662b]">{adherence}% Tuân thủ tuần này</span>
+              </div>
+              <div className="grid grid-cols-7 gap-1 text-center text-xs">
+                {['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'].map((d, i) => (
+                  <div key={d} className="flex flex-col items-center gap-1">
+                    <span className="text-[10px] text-[#687771]">{d}</span>
+                    <span className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${i === 3 ? 'bg-[#0b3026] text-white shadow-sm' : 'text-[#1A201C]'}`}>
+                      {17 + i}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Slots */}
+            <div className="bg-white rounded-3xl p-4 shadow-sm border border-[#ECE7DC] space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-bold text-[#1A201C]">Lịch nhắc uống thuốc hôm nay</span>
+                <span className="text-[10px] text-[#687771]">Chạm để cập nhật</span>
+              </div>
+
+              <div className="space-y-2">
+                {schedule.map((item) => (
+                  <div
+                    key={item.id}
+                    onClick={() => onToggle(item.id)}
+                    className={`rounded-2xl p-3 border flex items-center justify-between cursor-pointer transition-all ${item.taken ? 'bg-[#f6f3ed] border-[#c7e89e]' : 'bg-white border-[#ECE7DC]'}`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className={`px-2.5 py-1.5 rounded-xl font-extrabold text-xs ${item.taken ? 'bg-[#0b3026] text-[#cceda3]' : 'bg-[#F5EFE4] text-[#0b3026]'}`}>
+                        {item.time}
+                      </div>
+                      <div>
+                        <div className={`text-xs font-bold ${item.taken ? 'line-through text-[#687771]' : 'text-[#1A201C]'}`}>
+                          {item.name} ({item.dosage})
+                        </div>
+                        <div className="text-[10px] text-[#687771]">{item.instruction}</div>
+                      </div>
+                    </div>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${item.taken ? 'bg-[#c7e89e] text-[#0b3026]' : 'bg-[#ffdcc5] text-[#663304]'}`}>
+                      {item.taken ? 'Đã uống' : 'Chờ uống'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Sleep card */}
+            <div className="rounded-3xl bg-gradient-to-r from-[#D5EDAF] to-[#E9F6D6] p-4 text-[#0b3026] flex items-center justify-between shadow-sm">
+              <div>
+                <span className="text-xs font-bold">Sleep Overview • Tuần này</span>
+                <div className="text-xl font-extrabold mt-0.5">8.2 giờ <span className="text-xs font-normal">trung bình/đêm</span></div>
+              </div>
+              <div className="w-10 h-10 rounded-2xl bg-[#0b3026] text-[#cceda3] flex items-center justify-center font-bold text-xs"><IconMoon className="w-5 h-5" /></div>
+            </div>
+          </div>
+        );
+      }
+
+      // ==========================================
+      // ROOT APP COMPONENT (Mobile Container max-w-md)
+      // ==========================================
+      function App() {
+        const [activeTab, setActiveTab] = useState('dashboard');
+        const [schedule, setSchedule] = useState([
+          { id: '1', time: '08:00', name: 'Amlodipine Besylate', dosage: '5mg', instruction: '1 viên sau ăn sáng', taken: true },
+          { id: '2', time: '19:00', name: 'Metformin HCl', dosage: '500mg', instruction: '1 viên cùng bữa tối', taken: true },
+          { id: '3', time: '21:30', name: 'Atorvastatin Calcium', dosage: '10mg', instruction: '1 viên trước khi ngủ', taken: false }
+        ]);
+
+        const handleToggleSchedule = (id) => {
+          setSchedule((prev) => prev.map((s) => s.id === id ? { ...s, taken: !s.taken } : s));
+        };
+
+        const handleSaveSchedule = (meds) => {
+          const updated = meds.map((m, idx) => ({
+            id: `s-${idx}-${Date.now()}`,
+            time: m.time || (idx === 0 ? '08:00' : idx === 1 ? '19:00' : '21:30'),
+            name: m.name,
+            dosage: m.dosage,
+            instruction: m.instruction,
+            taken: idx === 0
+          }));
+          setSchedule(updated);
+        };
+
+        return (
+          <div className="min-h-screen py-0 sm:py-6 px-0 sm:px-4 flex flex-col items-center justify-center">
+            {/* Desktop Top Pill */}
+            <div className="hidden sm:flex items-center justify-between w-full max-w-md mb-3 px-3.5 py-1.5 rounded-full bg-[#0b3026] text-white text-xs shadow-md">
+              <span className="flex items-center gap-1.5 font-bold text-[#cceda3]">
+                <IconShieldCheck className="w-4 h-4" /> VitaTrack Health × TideCloak
+              </span>
+              <span className="text-[10px] text-[#a9cfbf] font-mono">Zero-Knowledge Proof Verified</span>
+            </div>
+
+            {/* Phone Container: max-w-md mx-auto, rounded corners, subtle border, centered */}
+            <div className="w-full max-w-md mx-auto min-h-screen sm:min-h-[820px] sm:max-h-[880px] bg-[#FBF8F2] sm:rounded-[42px] sm:border-[8px] sm:border-[#1A201C] shadow-2xl flex flex-col relative overflow-hidden">
+              {/* Notch */}
+              <div className="hidden sm:flex items-center justify-between px-7 pt-2.5 pb-1 bg-[#FBF8F2] text-[11px] font-bold text-[#1A201C]">
+                <span>09:41</span>
+                <div className="w-24 h-3.5 bg-[#1A201C] rounded-full"></div>
+                <span className="text-[10px] text-[#4b662b]">5G • 100%</span>
+              </div>
+
+              {/* Header */}
+              <header className="sticky top-0 z-30 bg-[#FBF8F2]/90 backdrop-blur-md border-b border-[#ECE7DC] px-5 h-14 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-[#c4ebda] flex items-center justify-center text-[#0b3026] font-bold text-xs"><IconActivity className="w-4 h-4" /></div>
+                  <div>
+                    <h1 className="text-xs font-extrabold text-[#1A201C]">VitaTrack Health</h1>
+                    <span className="text-[9px] font-bold text-[#4b662b] block">Secured by TideCloak</span>
+                  </div>
+                </div>
+                <button onClick={() => setActiveTab('schedule')} className="w-8 h-8 rounded-full bg-[#F5EFE4] flex items-center justify-center text-[#1A201C]"><IconBell className="w-4 h-4" /></button>
+              </header>
+
+              {/* Main Content Area */}
+              <main className="flex-1 overflow-y-auto no-scrollbar px-4 pt-3.5 pb-24">
+                {activeTab === 'dashboard' && <DashboardTab onNavigate={setActiveTab} />}
+                {activeTab === 'scanner' && <ScannerTab onNavigate={setActiveTab} onSaveSchedule={handleSaveSchedule} />}
+                {activeTab === 'ai' && <AiAssistantTab />}
+                {activeTab === 'schedule' && <ScheduleTab schedule={schedule} onToggle={handleToggleSchedule} />}
+              </main>
+
+              {/* 4-Tab Bottom Navigation */}
+              <div className="absolute bottom-3 left-0 right-0 z-40 px-4 pointer-events-none">
+                <nav className="pointer-events-auto w-full bg-white/95 backdrop-blur-md rounded-full p-1.5 shadow-xl border border-[#ECE7DC]">
+                  <div className="grid grid-cols-4 gap-1">
+                    {[
+                      { id: 'dashboard', label: 'Dashboard', icon: IconActivity },
+                      { id: 'scanner', label: 'Quét Đơn', icon: IconScanLine },
+                      { id: 'ai', label: 'AI Trợ Lý', icon: IconSparkles },
+                      { id: 'schedule', label: 'Lịch Trình', icon: IconCalendar }
+                    ].map((tab) => {
+                      const Icon = tab.icon;
+                      const active = activeTab === tab.id;
+                      return (
+                        <button
+                          key={tab.id}
+                          onClick={() => setActiveTab(tab.id)}
+                          className={`flex flex-col items-center justify-center py-2 rounded-full transition-all ${active ? 'bg-[#c7e89e] text-[#0b3026] font-extrabold shadow-sm' : 'text-[#687771] hover:text-[#1A201C]'}`}
+                        >
+                          <Icon className="w-4 h-4" />
+                          <span className="text-[10px] mt-0.5">{tab.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </nav>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
   </body>
 </html>
