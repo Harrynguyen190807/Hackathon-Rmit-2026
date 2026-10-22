@@ -8,11 +8,14 @@ import {
   Check,
   Code2,
   X,
+  RefreshCw,
 } from 'lucide-react';
 import TideCloakBadge from './TideCloakBadge';
 import {
   parsePrescriptionOcr,
+  preprocessPrescriptionImage,
   formatMealRelationLabel,
+  formatCompactTimingLabel,
 } from '../services/prescriptionParser';
 import { SYNTHETIC_PATIENT_VAULT } from '../services/tidecloak';
 
@@ -31,7 +34,9 @@ export default function ScannerTab({
   const [capturedImage, setCapturedImage] = useState(null);
   const [isScanning, setIsScanning] = useState(false);
   const [ocrProgress, setOcrProgress] = useState(0);
+  const [ocrStatusText, setOcrStatusText] = useState('');
   const [customRx, setCustomRx] = useState(null);
+  const [editableOcrText, setEditableOcrText] = useState('');
   const [showRawOcr, setShowRawOcr] = useState(false);
   const [showJsonSchema, setShowJsonSchema] = useState(false);
   const [savedToast, setSavedToast] = useState(false);
@@ -41,6 +46,10 @@ export default function ScannerTab({
   const fileInputRef = useRef(null);
 
   const currentRx = customRx || prescription;
+
+  useEffect(() => {
+    setEditableOcrText(currentRx.rawOcrText || '');
+  }, [currentRx.rawOcrText]);
 
   const stopCamera = () => {
     if (streamRef.current) {
@@ -88,6 +97,7 @@ export default function ScannerTab({
 
   const applyParsedRx = (parsed) => {
     setCustomRx(parsed);
+    setEditableOcrText(parsed.rawOcrText || '');
     if (typeof onUpdateCustomRx === 'function') {
       onUpdateCustomRx(parsed);
     }
@@ -95,10 +105,13 @@ export default function ScannerTab({
 
   const runOcrPipeline = async (dataUrl, label) => {
     setIsScanning(true);
-    setOcrProgress(20);
+    setOcrProgress(15);
+    setOcrStatusText('Pre-processing & enhancing contrast at Edge...');
     try {
+      const enhancedDataUrl = await preprocessPrescriptionImage(dataUrl);
       if (window.Tesseract) {
-        const res = await window.Tesseract.recognize(dataUrl, 'eng+vie', {
+        setOcrStatusText('Running bilingual OCR (VIE+ENG) & Brand Parser...');
+        const res = await window.Tesseract.recognize(enhancedDataUrl, 'vie+eng', {
           logger: (m) => {
             if (m.status === 'recognizing text' && typeof m.progress === 'number') {
               setOcrProgress(Math.max(25, Math.round(m.progress * 100)));
@@ -117,16 +130,24 @@ export default function ScannerTab({
       applyParsedRx(parsed);
     } finally {
       setOcrProgress(100);
-      setTimeout(() => setIsScanning(false), 300);
+      setTimeout(() => {
+        setIsScanning(false);
+        setOcrStatusText('');
+      }, 300);
     }
+  };
+
+  const handleReparseManualOcr = () => {
+    const parsed = parsePrescriptionOcr(editableOcrText, 'Edited OCR Prescription');
+    applyParsedRx(parsed);
   };
 
   const handleTestNoisyOcrSample = () => {
     stopCamera();
     setCapturedImage(null);
     const noisyInput =
-      'Patient Name: Michelle Nguyen\n1. A m l o r  5 m g (Amlodipine Besylate) - 1 tab Morning after meal\n2. G l u c o p h a g e  5 0 0 m g (Metformin HCl) - 1 viên x 2 lần / ngày with meal\n3. L i p i t o r  1 0 m g (Atorvastatin Calcium) - 1 tab before bedtime (21:30)';
-    const parsed = parsePrescriptionOcr(noisyInput, 'Noisy OCR Sample');
+      'Patient Name: Nguyễn Văn Hùng\n1/ Klamentin 625mg (Amoxicillin + Clavulanic Acid)   14 Viên\nUống sáng 1 viên, chiều 1 viên sau ăn\n2/ Nexium 20mg (Esomeprazole)   07 Viên\nNgày uống 1 lần sáng trước ăn 30 phút\n3/ Alpha Choay 4.2mg (Chymotrypsin)   20 Viên\n1 viên x 2 lần / ngày sau ăn\n4/ Panadol Extra 500mg (Paracetamol)   10 Viên\nS-T-C sau ăn';
+    const parsed = parsePrescriptionOcr(noisyInput, 'Hospital Rx Sample');
     applyParsedRx(parsed);
     setShowRawOcr(true);
     setShowJsonSchema(true);
@@ -140,7 +161,7 @@ export default function ScannerTab({
     canvas.height = video.videoHeight || 480;
     const ctx = canvas.getContext('2d');
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
     stopCamera();
     setCapturedImage(dataUrl);
     runOcrPipeline(dataUrl, 'Camera Snapshot');
@@ -281,7 +302,7 @@ export default function ScannerTab({
           )}
 
           {!cameraActive && !capturedImage && (
-            <div className="relative z-10 bg-[#FBF8F2]/95 rounded-xl p-3 border border-[#ECE7DC] text-[#1A201C] space-y-1.5 shadow-inner my-auto">
+            <div className="relative z-10 bg-[#FBF8F2]/95 rounded-xl p-3 border border-[#ECE7DC] text-[#1A201C] space-y-1.5 shadow-inner my-auto max-h-40 overflow-y-auto">
               <div className="flex justify-between items-center text-[10px] font-bold border-b border-[#ECE7DC] pb-1">
                 <span className="text-[#24473b] truncate max-w-[200px]">{currentRx.title}</span>
                 <span className="text-[#687771] font-mono">[PII_REDACTED]</span>
@@ -290,9 +311,9 @@ export default function ScannerTab({
                 {currentRx.medications.map((m, i) => (
                   <div
                     key={m.id}
-                    className="flex justify-between items-center bg-white px-2.5 py-1.5 rounded-lg border border-[#ECE7DC]"
+                    className="flex justify-between items-center bg-white px-2.5 py-1.5 rounded-lg border border-[#ECE7DC] gap-2"
                   >
-                    <div className="truncate">
+                    <div className="truncate min-w-0">
                       <span className="font-extrabold text-[#0b3026]">
                         {i + 1}. {m.brand_name || m.name} {m.dosage}
                       </span>
@@ -300,8 +321,8 @@ export default function ScannerTab({
                         ({m.active_ingredient})
                       </span>
                     </div>
-                    <span className="font-mono text-[10px] font-bold text-[#24473b] shrink-0 ml-1">
-                      {(m.scheduled_times || [m.time]).join(', ')}
+                    <span className="font-mono text-[10px] font-bold text-[#0b3026] bg-[#F5EFE4] px-2 py-0.5 rounded-md border border-[#E5E0D4] shrink-0">
+                      {(m.scheduled_times || [m.time]).join(' • ')}
                     </span>
                   </div>
                 ))}
@@ -313,7 +334,7 @@ export default function ScannerTab({
             <span className="px-2.5 py-1 rounded-full bg-[#0b3026]/85 backdrop-blur-md text-[#cceda3] text-[10px] font-bold flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-[#cceda3] animate-ping" />
               {isScanning
-                ? `Extracting Brand & Dosage (${ocrProgress}%)`
+                ? `${ocrStatusText || 'Extracting Brand & Dosage'} (${ocrProgress}%)`
                 : cameraActive
                 ? 'Live Camera Active • Align prescription in frame'
                 : `Detected ${currentRx.medications.length} medications`}
@@ -368,7 +389,7 @@ export default function ScannerTab({
         {/* Preset & OCR Normalization Test Controls */}
         <div className="mt-2.5 pt-2 border-t border-[#ECE7DC] space-y-1.5">
           <div className="text-[10px] font-bold text-[#687771] uppercase px-1">
-            Quick Prescription Presets &amp; OCR Noise Test:
+            Quick Prescription Presets &amp; Hospital OCR Test:
           </div>
           <div className="grid grid-cols-3 gap-1.5">
             <button
@@ -398,7 +419,7 @@ export default function ScannerTab({
               onClick={handleTestNoisyOcrSample}
               className="py-2 px-2 rounded-xl text-[11px] font-bold bg-[#f6f3ed] hover:bg-[#e5e2dc] text-[#0b3026] border border-[#ECE7DC] transition-colors"
             >
-              Test Noisy OCR
+              Rx 3: Hospital OCR
             </button>
           </div>
         </div>
@@ -431,9 +452,28 @@ export default function ScannerTab({
         </div>
 
         {showRawOcr && (
-          <pre className="p-2.5 rounded-xl bg-[#f6f3ed] text-[11px] font-mono text-[#1A201C] whitespace-pre-wrap max-h-32 overflow-y-auto border border-[#ECE7DC]">
-            {currentRx.rawOcrText}
-          </pre>
+          <div className="space-y-2">
+            <textarea
+              value={editableOcrText}
+              onChange={(e) => setEditableOcrText(e.target.value)}
+              rows={4}
+              placeholder="Paste or edit extracted OCR prescription lines here..."
+              className="w-full p-2.5 rounded-xl bg-[#f6f3ed] text-[11px] font-mono text-[#1A201C] border border-[#ECE7DC] focus:outline-none focus:border-[#24473b]"
+            />
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] text-[#687771]">
+                Tip: Edit any noisy OCR line above and click Re-Parse to update medications.
+              </span>
+              <button
+                type="button"
+                onClick={handleReparseManualOcr}
+                className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#0b3026] text-[#cceda3] text-[10px] font-bold shadow-xs hover:bg-[#24473b] transition-colors"
+              >
+                <RefreshCw className="w-3 h-3" />
+                <span>Re-Parse OCR Text</span>
+              </button>
+            </div>
+          </div>
         )}
 
         {showJsonSchema && (
@@ -489,42 +529,40 @@ export default function ScannerTab({
         {currentRx.medications.map((m) => (
           <div
             key={m.id}
-            className="rounded-2xl bg-white p-3.5 shadow-sm border border-[#ECE7DC] flex flex-col gap-2"
+            className="rounded-2xl bg-white p-3.5 shadow-sm border border-[#ECE7DC] flex items-center justify-between gap-3"
           >
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex items-start gap-2.5 min-w-0">
-                <div className="w-9 h-9 rounded-xl bg-[#f6f3ed] flex items-center justify-center text-[#24473b] shrink-0 mt-0.5">
-                  <Pill className="w-4 h-4" />
+            <div className="flex items-start gap-2.5 min-w-0 flex-1">
+              <div className="w-9 h-9 rounded-xl bg-[#f6f3ed] flex items-center justify-center text-[#24473b] shrink-0 mt-0.5">
+                <Pill className="w-4 h-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                {/* Commercial/Brand Name + Dosage */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-sm font-extrabold text-[#0b3026]">
+                    {m.brand_name || m.name} {m.dosage}
+                  </span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#c7e89e]/70 text-[#0b3026] font-bold">
+                    {formatMealRelationLabel(m.meal_relation)}
+                  </span>
                 </div>
-                <div className="min-w-0">
-                  {/* Commercial/Brand Name + Dosage */}
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-sm font-extrabold text-[#0b3026]">
-                      {m.brand_name || m.name} {m.dosage}
-                    </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#c7e89e]/70 text-[#0b3026] font-bold">
-                      {formatMealRelationLabel(m.meal_relation)}
-                    </span>
-                  </div>
-                  {/* Secondary Active Ingredient Reference */}
-                  <div className="text-[11px] font-semibold text-[#4b662b]">
-                    Active Ingredient: {m.active_ingredient || m.name}
-                  </div>
-                  <div className="text-[11px] text-[#687771] mt-0.5">
-                    {m.notes || m.instruction}
-                  </div>
+                {/* Secondary Active Ingredient Reference */}
+                <div className="text-[11px] font-semibold text-[#4b662b] truncate">
+                  Active Ingredient: {m.active_ingredient || m.name}
+                </div>
+                <div className="text-[11px] text-[#687771] mt-0.5 leading-snug">
+                  {m.notes || m.instruction}
                 </div>
               </div>
+            </div>
 
-              {/* Scheduled Times & Frequency */}
-              <div className="text-right shrink-0 pl-1">
-                <span className="text-xs font-extrabold text-[#0b3026] bg-[#F5EFE4] px-2.5 py-1 rounded-lg block">
-                  {(m.scheduled_times || [m.time]).join(' • ')}
-                </span>
-                <span className="block text-[9.5px] text-[#687771] uppercase font-bold mt-1">
-                  {m.frequency_per_day || 1}x/day • {(m.timing_slots || ['DAILY']).join('/')}
-                </span>
+            {/* Unified Fixed-Width Symmetrical Time-Slot Frame */}
+            <div className="w-[118px] shrink-0 rounded-2xl bg-[#F5EFE4] border border-[#E5E0D4] p-1.5 flex flex-col items-center justify-center text-center gap-1 self-center">
+              <div className="w-full rounded-xl bg-white px-2 py-1 text-[11px] font-extrabold text-[#0b3026] shadow-xs tracking-tight text-center truncate">
+                {(m.scheduled_times || [m.time || '08:00']).join(' • ')}
               </div>
+              <span className="text-[9px] font-extrabold text-[#4b662b] uppercase tracking-wider leading-tight text-center">
+                {formatCompactTimingLabel(m.timing_slots, m.frequency_per_day)}
+              </span>
             </div>
           </div>
         ))}
@@ -545,7 +583,15 @@ export default function ScannerTab({
               <span>Synced to Daily Medication Reminders!</span>
             </>
           ) : (
-            <span>Sync Automated Daily Reminders (08:00, 19:00, 21:30)</span>
+            <span>
+              Sync Automated Daily Reminders (
+              {Array.from(
+                new Set(
+                  currentRx.medications.flatMap((m) => m.scheduled_times || [m.time || '08:00'])
+                )
+              ).join(', ')}
+              )
+            </span>
           )}
         </button>
 
